@@ -7,18 +7,18 @@ import torch
 class BertModel:
     checkpoint = 'bert-base-uncased'
 
-    def __init__(self, datasets):
+    def __init__(self):
         self.model = AutoModelForSequenceClassification.from_pretrained(self.checkpoint, num_labels=4)
         self.tokenizer = AutoTokenizer.from_pretrained(self.checkpoint)
         self.data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
-        self.datasets = datasets
+        
     
     def tokenize_function(self, ds):
         return self.tokenizer(ds['Text'], truncation=True)
     
-    def process_ds(self):
+    def process_ds(self, datasets):
         # Tokenize the datasets
-        tokenized_ds = self.datasets.map(self.tokenize_function, batched=True)
+        tokenized_ds = datasets.map(self.tokenize_function, batched=True)
 
         # Rename the columns
         tokenized_ds = tokenized_ds.rename_column("label", "labels")
