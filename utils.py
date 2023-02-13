@@ -1,4 +1,5 @@
 from datasets import load_dataset, DatasetDict
+from torch.utils.data import DataLoader
 
 def splitTrainTestVal(filepath):
     data_files = {"train": filepath}
@@ -16,6 +17,16 @@ def splitTrainTestVal(filepath):
     'valid': test_valid['train']})
     return train_test_valid_dataset
     
+def build_dataloaders(tokenized_ds, data_collator):
+        train_dataloader = DataLoader(
+        tokenized_ds["train"], shuffle=True, batch_size=8, collate_fn=data_collator
+        )
+        eval_dataloader = DataLoader(
+            tokenized_ds["valid"], batch_size=8, collate_fn=data_collator
+        )
+        test_dataloader = DataLoader(
+            tokenized_ds["test"], batch_size=8, collate_fn=data_collator
+        )
 
 if __name__ == "__main__":
     d = splitTrainTestVal("./MULTI-Fake-Detective_Task1_Data.tsv")
