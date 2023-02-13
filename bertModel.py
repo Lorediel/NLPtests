@@ -6,7 +6,7 @@ class BertModel:
     def __init__(self, datasets):
         self.model = AutoModelForSequenceClassification.from_pretrained(self.checkpoint, num_labels=4)
         self.tokenizer = AutoTokenizer.from_pretrained(self.checkpoint)
-        self.datasets = self.datasets
+        self.datasets = datasets
     
     def tokenize_function(self, text):
         return self.tokenizer(text, truncation=True)
@@ -19,7 +19,7 @@ class BertModel:
         tokenized_ds.rename_column_("label", "labels")
         tokenized_ds.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
         print(tokenized_ds)
-        
+
         # Split the dataset
         tokenized_ds = tokenized_ds.train_test_split(test_size=0.2)
         tokenized_train_dataset = tokenized_ds["train"]
