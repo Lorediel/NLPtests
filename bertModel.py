@@ -8,8 +8,8 @@ class BertModel:
         self.tokenizer = AutoTokenizer.from_pretrained(self.checkpoint)
         self.datasets = datasets
     
-    def tokenize_function(self, text):
-        return self.tokenizer(text, truncation=True)
+    def tokenize_function(self, ds):
+        return self.tokenizer(ds['Text'], truncation=True)
     
     def process_ds(self):
         # Tokenize the datasets
