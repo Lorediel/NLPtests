@@ -17,16 +17,20 @@ def splitTrainTestVal(filepath):
     'valid': test_valid['train']})
     return train_test_valid_dataset
     
-def build_dataloaders(tokenized_ds, data_collator):
+def build_dataloaders(tokenized_ds, data_collator, batch_size = 8):
         train_dataloader = DataLoader(
-        tokenized_ds["train"], shuffle=True, batch_size=8, collate_fn=data_collator
+        tokenized_ds["train"], shuffle=True, batch_size=batch_size, collate_fn=data_collator
         )
         eval_dataloader = DataLoader(
-            tokenized_ds["valid"], batch_size=8, collate_fn=data_collator
+            tokenized_ds["valid"], batch_size=batch_size, collate_fn=data_collator
         )
         test_dataloader = DataLoader(
-            tokenized_ds["test"], batch_size=8, collate_fn=data_collator
+            tokenized_ds["test"], batch_size=batch_size, collate_fn=data_collator
         )
+
+        return train_dataloader, eval_dataloader, test_dataloader
+
+
 
 if __name__ == "__main__":
     d = splitTrainTestVal("./MULTI-Fake-Detective_Task1_Data.tsv")

@@ -7,6 +7,7 @@ import torch
 class BertModel:
     checkpoint = 'bert-base-uncased'
 
+
     def __init__(self):
         self.model = AutoModelForSequenceClassification.from_pretrained(self.checkpoint, num_labels=4)
         self.tokenizer = AutoTokenizer.from_pretrained(self.checkpoint)
@@ -87,15 +88,42 @@ class BertModel:
 
         progress_bar = tqdm(range(num_training_steps))
         self.model.to(device)
-        self.model.train()
+        train_losses = []
+        train_accuracies = []
+        eval_accuracies = []
         for epoch in range(num_epochs):
             for batch in train_dataloader:
+                self.model.train()
                 batch = {k: v.to(device) for k, v in batch.items()}
                 outputs = self.model(**batch)
                 loss = outputs.loss
-                loss.backward()
 
+                logits = outputs.logits
+                predictions = torch.argmax(logits, dim=-1).to(device)
+                correct = torch.sum(predictions == batch["labels"])
+                train_accuracy = correct / len(predictions)
+                train_accuracies.append(train_accuracy)
+                loss.backward()
                 optimizer.step()
+                train_losses.append(loss.item())
                 scheduler.step()
                 optimizer.zero_grad()
+
+                # eval on the validation set and compute the accuracy
+                self.model.eval()
+                total = 0
+                eval_correct = 0
+                for eval_batch in eval_dataloader:
+                    eval_batch = {k: v.to(device) for k, v in eval_batch.items()}
+                    with torch.no_grad():
+                        outputs_eval = self.model(**eval_batch)
+                        logits = outputs_eval.logits
+                        predictions = torch.argmax(logits, dim=-1).to(device)
+                        eval_correct += torch.sum(predictions == eval_batch["labels"])
+                        total += len(predictions)
+                eval_accuracy = eval_correct / total
+                eval_accuracies.append(eval_accuracy)
                 progress_bar.update(1)
+
+        return train_losses, train_accuracies, eval_accuracies
+
