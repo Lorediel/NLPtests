@@ -1,6 +1,6 @@
 from transformers import AdamW, AutoTokenizer, AutoModelForSequenceClassification, DataCollatorWithPadding, get_scheduler
 from torch.utils.data import DataLoader
-from utils import build_dataloaders
+from NLPtests.utils import build_dataloaders
 from tqdm.auto import tqdm
 import torch
 
@@ -21,7 +21,7 @@ class BertModel:
         tokenized_ds = datasets.map(self.tokenize_function, batched=True)
 
         # Rename the columns
-        tokenized_ds = tokenized_ds.rename_column("label", "labels")
+        tokenized_ds = tokenized_ds.rename_column("Label", "labels")
         tokenized_ds.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
         self.tokenized_ds = tokenized_ds
         return tokenized_ds
