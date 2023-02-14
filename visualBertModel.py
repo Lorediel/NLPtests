@@ -46,14 +46,24 @@ class VisualBertModel:
             with torch.no_grad():
                 batch = {k: v.to(device) for k, v in batch.items()}
                 ID_tensor = batch['ID']
-                #images_paths = []
+                images_paths = []
                 for i, id in enumerate(ID_tensor):
                   single_image_paths = sorted(glob(f"{images_folder}/**/{id}*.jpg", recursive=True))
-                  ve = []
-                  for path in single_image_paths:
-                    single_visual_embeds = get_visual_embeds(path)
-                    ve.append(single_visual_embeds)
-                  #images_paths.append(single_image_paths)
+                  images_paths.append(single_image_paths)
+                visual_embeds = get_visual_embeds(images_paths)
+                visual_embeds = torch.stack(visual_embeds)
+                visual_attention_mask = torch.ones(visual_embeds.shape[:-1], dtype=torch.long)
+                visual_token_type_ids = torch.ones(visual_embeds.shape[:-1], dtype=torch.long)
+                batch.update(
+                    {
+                        "visual_embeds": visual_embeds,
+                        "visual_token_type_ids": visual_token_type_ids,
+                        "visual_attention_mask": visual_attention_mask,
+                    }
+                )
+                outputs = self.model(**batch)
+                return outputs
+
 
 
 
