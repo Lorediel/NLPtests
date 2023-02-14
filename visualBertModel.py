@@ -59,6 +59,7 @@ class VisualBertModel:
 
 
 
+
 def get_visual_embeds(imagesPaths):
     total_length = 0
     for l in imagesPaths:
@@ -86,5 +87,5 @@ def get_visual_embeds(imagesPaths):
     for l in imagesPaths:
         current_ve = visual_embeds[i:i+len(l)]
         i+=len(l)
-        total_visual_embeds.append(torch.cat(current_ve),0)
-    return visual_embeds
+        total_visual_embeds.append(torch.cat(current_ve,0))
+    return total_visual_embeds
