@@ -1,5 +1,6 @@
 from transformers import AutoTokenizer, VisualBertForVisualReasoning, DataCollatorWithPadding
 import torch
+from utils import build_dataloaders
 from NLPtests.imagePreProcessing import ImagePreProcessing as ImgPreProc
 
 if torch.cuda.is_available(): 
@@ -25,14 +26,26 @@ class VisualBertModel:
 
         # Rename the columns
         tokenized_ds = tokenized_ds.rename_column("Label", "labels")
-        tokenized_ds.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
+        #tokenized_ds.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
         self.tokenized_ds = tokenized_ds
 
         return tokenized_ds
 
-    def test(imagesPaths):
-        visual_embeds = get_visual_embeds(imagesPaths)
-        print(visual_embeds)
+    
+
+    def test(self):
+        train_dataloader, eval_dataloader, test_dataloader = build_dataloaders(self.tokenized_ds, self.data_collator)
+        self.model.eval()
+        for batch in eval_dataloader:
+            with torch.no_grad():
+                batch = {k: v.to(device) for k, v in batch.items()}
+                print(batch)
+                break
+                #outputs = self.model(**batch)
+                #print(outputs)
+
+
+
 
 
 def get_visual_embeds(imagesPaths):
