@@ -1,7 +1,8 @@
 from transformers import AutoTokenizer, VisualBertForVisualReasoning, DataCollatorWithPadding
 import torch
-from utils import build_dataloaders
+from NLPtests.utils import build_dataloaders
 from NLPtests.imagePreProcessing import ImagePreProcessing as ImgPreProc
+from glob import glob
 
 if torch.cuda.is_available(): 
     dev = "cuda:0" 
@@ -12,7 +13,7 @@ else:
 class VisualBertModel:
     checkpoint = 'uclanlp/visualbert-nlvr2-coco-pre'
 
-    def __init_(self):
+    def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         self.model = VisualBertForVisualReasoning.from_pretrained(self.checkpoint)
         self.data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
@@ -26,23 +27,28 @@ class VisualBertModel:
 
         # Rename the columns
         tokenized_ds = tokenized_ds.rename_column("Label", "labels")
-        #tokenized_ds.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
+        tokenized_ds.set_format("torch", columns=["input_ids", "attention_mask", "labels", "ID"])
         self.tokenized_ds = tokenized_ds
 
         return tokenized_ds
 
     
 
-    def test(self):
+    def test(self, images_folder):
+        if torch.cuda.is_available(): 
+          dev = "cuda:0" 
+        else: 
+          dev = "cpu" 
+        device = torch.device(dev) 
         train_dataloader, eval_dataloader, test_dataloader = build_dataloaders(self.tokenized_ds, self.data_collator)
         self.model.eval()
         for batch in eval_dataloader:
             with torch.no_grad():
                 batch = {k: v.to(device) for k, v in batch.items()}
-                print(batch)
+                ID = batch['ID']
+                images_paths = sorted(glob(f"{images_folder}/**/{ID}*.jpg", recursive=True))
+                print(images_paths)
                 break
-                #outputs = self.model(**batch)
-                #print(outputs)
 
 
 
