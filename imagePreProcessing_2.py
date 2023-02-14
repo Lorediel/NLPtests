@@ -156,9 +156,10 @@ class ImagePreProcessing:
 
     def openAndConvertBGR(self, images):
         img_list = []
-        for image in images:
-            img = cv2.imread(image)
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            img_list.append(img)
+        for image_list in images:
+            for image in image_list:
+                img = cv2.imread(image)
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                img_list.append(img)
         return img_list
 
