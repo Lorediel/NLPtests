@@ -1,6 +1,12 @@
 from transformers import AutoTokenizer, VisualBertForVisualReasoning, DataCollatorWithPadding
 import torch
-import NLPtests.imagePreProcessing as ImgPreProc
+from NLPtests.imagePreProcessing import ImagePreProcessing as ImgPreProc
+
+if torch.cuda.is_available(): 
+    dev = "cuda:0" 
+else: 
+    dev = "cpu" 
+    device = torch.device(dev) 
 
 class VisualBertModel:
     checkpoint = 'uclanlp/visualbert-nlvr2-coco-pre'
@@ -31,13 +37,13 @@ class VisualBertModel:
 
 def get_visual_embeds(imagesPaths):
     imgPreProc = ImgPreProc()
-    images = imgPreProc.openAndConvertBGR(images)
+    images = imgPreProc.openAndConvertBGR(imagesPaths)
     images, batched_inputs = imgPreProc.prepare_image_inputs(images)
     features = imgPreProc.get_features(images)
     proposals = imgPreProc.get_proposals(images, features)
     box_features, features_list = imgPreProc.get_box_features(features, proposals, len(imagesPaths))
     pred_class_logits, pred_proposal_deltas = imgPreProc.get_prediction_logits(features_list, proposals)
-    boxes, scores, image_shapes = imgPreProc.get_box_scores(pred_class_logits, pred_proposal_deltas)
+    boxes, scores, image_shapes = imgPreProc.get_box_scores(pred_class_logits, pred_proposal_deltas, proposals)
     output_boxes = [imgPreProc.get_output_boxes(boxes[i], batched_inputs[i], proposals[i].image_size) for i in range(len(proposals))]
     temp = [imgPreProc.select_boxes(output_boxes[i], scores[i]) for i in range(len(scores))]
     keep_boxes, max_conf = [],[]

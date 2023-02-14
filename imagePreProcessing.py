@@ -16,7 +16,11 @@ import cv2
 import numpy as np
 from copy import deepcopy
 
-from NLPtests.costants import device
+if torch.cuda.is_available(): 
+    dev = "cuda:0" 
+else: 
+    dev = "cpu" 
+    device = torch.device(dev) 
 
 class ImagePreProcessing:
 
@@ -48,7 +52,6 @@ class ImagePreProcessing:
         self.model = model
         self.cfg = cfg
 
-        return model
 
     def prepare_image_inputs(self, img_list):
         # Resizing the image according to the configuration
@@ -117,7 +120,7 @@ class ImagePreProcessing:
 
         return boxes, scores, image_shapes
 
-    def get_output_boxes(boxes, batched_inputs, image_size):
+    def get_output_boxes(self, boxes, batched_inputs, image_size):
         proposal_boxes = boxes.reshape(-1, 4).clone()
         scale_x, scale_y = (batched_inputs["width"] / image_size[1], batched_inputs["height"] / image_size[0])
         output_boxes = Boxes(proposal_boxes)
@@ -141,17 +144,17 @@ class ImagePreProcessing:
         keep_boxes = torch.where(max_conf >= test_score_thresh)[0]
         return keep_boxes, max_conf
 
-    def filter_boxes(keep_boxes, max_conf, min_boxes, max_boxes):
+    def filter_boxes(self, keep_boxes, max_conf, min_boxes, max_boxes):
         if len(keep_boxes) < min_boxes:
             keep_boxes = np.argsort(max_conf).numpy()[::-1][:min_boxes]
         elif len(keep_boxes) > max_boxes:
             keep_boxes = np.argsort(max_conf).numpy()[::-1][:max_boxes]
         return keep_boxes
 
-    def get_visual_embeds(box_features, keep_boxes):
+    def get_visual_embeds(self, box_features, keep_boxes):
         return box_features[keep_boxes.copy()]
 
-    def openAndConvertBGR(images):
+    def openAndConvertBGR(self, images):
         img_list = []
         for image in images:
             img = cv2.imread(image)
