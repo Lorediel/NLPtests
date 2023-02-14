@@ -87,15 +87,14 @@ class BertModel:
 
             device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-            training_args = TrainingArguments("test-trainer", evaluation_strategy="steps")
+            training_args = TrainingArguments("test-trainer", evaluation_strategy="steps", logging_steps=10)
             trainer = Trainer(
                 model=self.model,
                 args=training_args,
                 train_dataset = self.tokenized_ds['train'],
                 eval_dataset= self.tokenized_ds['valid'],
                 data_collator=self.data_collator,
-                compute_metrics=compute_metrics,
-                logging_steps=10
+                compute_metrics=compute_metrics
             )
 
             trainer.train()

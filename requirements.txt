@@ -2,3 +2,6 @@ transformers>=4.26.1
 datasets>=2.9.0
 torchvision>=0.14.1
 tqdm>=4.64.1
+git+https://github.com/facebookresearch/detectron2.git@v0.5#egg=detectron2
+pyyaml==5.1
+
