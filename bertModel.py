@@ -94,7 +94,8 @@ class BertModel:
                 train_dataset = self.tokenized_ds['train'],
                 eval_dataset= self.tokenized_ds['valid'],
                 data_collator=self.data_collator,
-                compute_metrics=compute_metrics
+                compute_metrics=compute_metrics,
+                logging_steps=10
             )
 
             trainer.train()
