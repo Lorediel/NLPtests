@@ -13,11 +13,13 @@ from torchvision.transforms import (
     Resize,
     ToTensor,
 )
+from torch.utils.data import Dataset
 
 def pil_loader(path: str):
     with open(path, "rb") as f:
         im = Image.open(f)
         return im.convert("RGB")
+
 
 class ResnetModel:
 

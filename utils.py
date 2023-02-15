@@ -2,9 +2,11 @@ from datasets import load_dataset, DatasetDict
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-def splitTrainTestVal(filepath):
+def splitTrainTestVal(filepath, delete_date = False):
     data_files = {"train": filepath}
     dataset_dict = load_dataset("csv", data_files=filepath, delimiter="\t")
+    if (delete_date):
+        dataset_dict = dataset_dict.remove_columns(["Date"])
     dataset = dataset_dict["train"]
     dataset = dataset.shuffle(seed = 64)
     # 90% train, 10% test + validation
