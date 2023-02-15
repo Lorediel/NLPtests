@@ -8,13 +8,10 @@ def splitTrainTestVal(filepath):
     dataset = dataset.shuffle(seed = 64)
     # 90% train, 10% test + validation
     train_testvalid = dataset.train_test_split(test_size=0.2)
-    # Split the 10% test + valid in half test, half valid
-    test_valid = train_testvalid['test'].train_test_split(test_size=0.5)
     # gather everyone if you want to have a single DatasetDict
     train_test_valid_dataset = DatasetDict({
     'train': train_testvalid['train'],
-    'test': test_valid['test'],
-    'valid': test_valid['train']})
+    'valid': train_testvalid['test']})
     return train_test_valid_dataset
     
 def build_dataloaders(tokenized_ds, data_collator, batch_size = 8):
@@ -24,11 +21,8 @@ def build_dataloaders(tokenized_ds, data_collator, batch_size = 8):
         eval_dataloader = DataLoader(
             tokenized_ds["valid"], batch_size=batch_size, collate_fn=data_collator
         )
-        test_dataloader = DataLoader(
-            tokenized_ds["test"], batch_size=batch_size, collate_fn=data_collator
-        )
 
-        return train_dataloader, eval_dataloader, test_dataloader
+        return train_dataloader, eval_dataloader
 
 
 

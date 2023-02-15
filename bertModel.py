@@ -29,7 +29,7 @@ class BertModel:
         return tokenized_ds
 
     def train(self, num_epochs = 3, lr = 5e-5, scheduler_type = "linear", warmup_steps = 0, batch_size = 8, eval_every_step = False):
-            train_dataloader, eval_dataloader, test_dataloader = build_dataloaders(self.tokenized_ds, self.data_collator)
+            train_dataloader, eval_dataloader = build_dataloaders(self.tokenized_ds, self.data_collator)
             
             # Initialize the optimizer
             optimizer = AdamW(self.model.parameters(), lr=lr)

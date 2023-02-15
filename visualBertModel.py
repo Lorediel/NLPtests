@@ -1,8 +1,9 @@
-from transformers import AutoTokenizer, VisualBertForVisualReasoning, DataCollatorWithPadding
+from transformers import AdamW, AutoTokenizer, VisualBertForVisualReasoning, DataCollatorWithPadding, get_scheduler, TrainingArguments, Trainer
 import torch
 from NLPtests.utils import build_dataloaders
 from NLPtests.imagePreProcessing_2 import ImagePreProcessing as ImgPreProc
 from glob import glob
+from tqdm.auto import tqdm
 
 if torch.cuda.is_available(): 
     dev = "cuda:0" 
@@ -34,23 +35,34 @@ class VisualBertModel:
 
     
 
-    def test(self, images_folder):
+    def train(self, images_folder, num_epochs= 3, lr = 5e-5,  warmup_steps = 0, batch_size = 8):
         if torch.cuda.is_available(): 
           dev = "cuda:0" 
         else: 
           dev = "cpu" 
         device = torch.device(dev) 
-        train_dataloader, eval_dataloader, test_dataloader = build_dataloaders(self.tokenized_ds, self.data_collator)
+        train_dataloader, eval_dataloader = build_dataloaders(self.tokenized_ds, self.data_collator, batch_size=batch_size)
         self.model.to(device)
-        self.model.eval()
-        for batch in train_dataloader:
-            with torch.no_grad():
+        # Initialize the optimizer
+        optimizer = AdamW(self.model.parameters(), lr=lr)
+        num_training_steps=len(train_dataloader) * num_epochs
+        # Initialize the scheduler
+        scheduler = get_scheduler(
+            name="linear",
+            optimizer=optimizer,
+            num_warmup_steps=warmup_steps,
+            num_training_steps=num_training_steps
+        )
+        self.model.train()
+        progress_bar = tqdm(range(num_training_steps))
+        for epoch in range(num_epochs):
+            for batch in train_dataloader:
                 batch = {k: v.to(device) for k, v in batch.items()}
                 ID_tensor = batch['ID']
                 images_paths = []
                 for i, id in enumerate(ID_tensor):
-                  single_image_paths = sorted(glob(f"{images_folder}/**/{id}*.jpg", recursive=True))
-                  images_paths.append(single_image_paths)
+                    single_image_paths = sorted(glob(f"{images_folder}/**/{id}*.jpg", recursive=True))
+                    images_paths.append(single_image_paths)
                 visual_embeds = get_visual_embeds(images_paths)
                 visual_embeds = torch.stack(visual_embeds).to(device)
                 visual_attention_mask = torch.ones(visual_embeds.shape[:-1], dtype=torch.long).to(device)
@@ -64,9 +76,14 @@ class VisualBertModel:
                 )
                 batch.pop("ID")
                 outputs = self.model(**batch)
-                return outputs
-
-
+                loss = outputs.loss
+                logits = outputs.logits
+                loss.backward()
+                optimizer.step()
+                scheduler.step()
+                optimizer.zero_grad()
+                progress_bar.update(1)
+        
 
 
 
