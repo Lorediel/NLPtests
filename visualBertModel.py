@@ -61,6 +61,7 @@ class VisualBertModel:
                         "visual_attention_mask": visual_attention_mask,
                     }
                 )
+                batch.pop("ID")
                 outputs = self.model(**batch)
                 return outputs
 
@@ -92,10 +93,24 @@ def get_visual_embeds(imagesPaths):
     MAX_BOXES=100
     keep_boxes = [imgPreProc.filter_boxes(keep_box, mx_conf, MIN_BOXES, MAX_BOXES) for keep_box, mx_conf in zip(keep_boxes, max_conf)]
     visual_embeds = [imgPreProc.get_visual_embeds(box_feature, keep_box) for box_feature, keep_box in zip(box_features, keep_boxes)]
-    total_visual_embeds = []
     i= 0
+    MAX_BOXES = 100
+    final_visual_embeds = []
     for l in imagesPaths:
+        #number of images associated
+        b = len(l)
+        p = parts(MAX_BOXES, b)
+        #visual embeds for the images of the same row
         current_ve = visual_embeds[i:i+len(l)]
-        i+=len(l)
-        total_visual_embeds.append(torch.cat(current_ve,0))
-    return total_visual_embeds
+        j=0
+        new_ves = []
+        for tensor in current_ve:
+            new_ves.append(tensor[:p[j], :])
+            j+=1
+        new_ves = torch.cat(new_ves, 0)
+        final_visual_embeds.append(new_ves)
+    return final_visual_embeds
+
+def parts(a, b):
+    q, r = divmod(a, b)
+    return [q + 1] * r + [q] * (b - r)

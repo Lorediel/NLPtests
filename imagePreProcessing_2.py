@@ -145,6 +145,7 @@ class ImagePreProcessing:
         return keep_boxes, max_conf
 
     def filter_boxes(self, keep_boxes, max_conf, min_boxes, max_boxes):
+        
         if len(keep_boxes) < min_boxes:
             keep_boxes = np.argsort(max_conf).numpy()[::-1][:min_boxes]
         elif len(keep_boxes) > max_boxes:
