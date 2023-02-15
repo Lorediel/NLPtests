@@ -41,8 +41,9 @@ class VisualBertModel:
           dev = "cpu" 
         device = torch.device(dev) 
         train_dataloader, eval_dataloader, test_dataloader = build_dataloaders(self.tokenized_ds, self.data_collator)
+        self.model.to(device)
         self.model.eval()
-        for batch in eval_dataloader:
+        for batch in train_dataloader:
             with torch.no_grad():
                 batch = {k: v.to(device) for k, v in batch.items()}
                 ID_tensor = batch['ID']
@@ -51,9 +52,9 @@ class VisualBertModel:
                   single_image_paths = sorted(glob(f"{images_folder}/**/{id}*.jpg", recursive=True))
                   images_paths.append(single_image_paths)
                 visual_embeds = get_visual_embeds(images_paths)
-                visual_embeds = torch.stack(visual_embeds)
-                visual_attention_mask = torch.ones(visual_embeds.shape[:-1], dtype=torch.long)
-                visual_token_type_ids = torch.ones(visual_embeds.shape[:-1], dtype=torch.long)
+                visual_embeds = torch.stack(visual_embeds).to(device)
+                visual_attention_mask = torch.ones(visual_embeds.shape[:-1], dtype=torch.long).to(device)
+                visual_token_type_ids = torch.ones(visual_embeds.shape[:-1], dtype=torch.long).to(device)
                 batch.update(
                     {
                         "visual_embeds": visual_embeds,
