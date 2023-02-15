@@ -1,8 +1,6 @@
-from utils import splitTrainTestVal
-from bertModel import BertModel
+from resnet import ResnetModel
+from datasets import load_dataset
 
-# Load the dataset
-datasets = splitTrainTestVal("/content/NLP-tests/MULTI-Fake-Detective_Task1_Data.tsv")
-
-# Initialize the model
-model = BertModel(datasets)
+resnet = ResnetModel()
+datasets = load_dataset("csv", data_files="./MULTI-Fake-Detective_Task1_Data.tsv", delimiter="\t")
+resnet.test(datasets)

@@ -26,13 +26,13 @@ def build_dataloaders(tokenized_ds, data_collator, batch_size = 8):
         return train_dataloader, eval_dataloader
 
 def compute_precision(preds, ground_truth):
-    return precision_score(ground_truth, preds, average='micro')
+    return precision_score(ground_truth, preds, average='macro', zero_division=1)
 
 def compute_recall(preds, ground_truth):
-    return recall_score(ground_truth, preds, average='micro')
+    return recall_score(ground_truth, preds, average='macro', zero_division=1)
 
 def compute_f1(preds, ground_truth):
-    return f1_score(ground_truth, preds, average='micro')
+    return f1_score(ground_truth, preds, average='macro', zero_division=1)
 
 def compute_accuracy(preds, ground_truth):
     return accuracy_score(ground_truth, preds)
