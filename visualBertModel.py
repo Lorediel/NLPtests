@@ -16,7 +16,7 @@ class VisualBertModel:
 
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-        self.model = VisualBertForVisualReasoning.from_pretrained(self.checkpoint)
+        self.model = VisualBertForVisualReasoning.from_pretrained(self.checkpoint, num_labels= 4)
         self.data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
     
     def tokenize_function(self, ds):
@@ -83,7 +83,52 @@ class VisualBertModel:
                 scheduler.step()
                 optimizer.zero_grad()
                 progress_bar.update(1)
-        
+
+    def load_model(self, model):
+        self.model = model
+
+    def eval(self, images_folder, batch_size=8):
+        if torch.cuda.is_available(): 
+          dev = "cuda:0" 
+        else: 
+          dev = "cpu" 
+        device = torch.device(dev) 
+        train_dataloader, eval_dataloader = build_dataloaders(self.tokenized_ds, self.data_collator, batch_size=batch_size)
+        progress_bar = tqdm(range(len(eval_dataloader)))
+        self.model.eval()
+        total=0
+        total_correct = 0
+        for batch in eval_dataloader:
+            batch = {k: v.to(device) for k, v in batch.items()}
+            ID_tensor = batch['ID']
+            images_paths = []
+            for i, id in enumerate(ID_tensor):
+                single_image_paths = sorted(glob(f"{images_folder}/**/{id}*.jpg", recursive=True))
+                images_paths.append(single_image_paths)
+            visual_embeds = get_visual_embeds(images_paths)
+            visual_embeds = torch.stack(visual_embeds).to(device)
+            visual_attention_mask = torch.ones(visual_embeds.shape[:-1], dtype=torch.long).to(device)
+            visual_token_type_ids = torch.ones(visual_embeds.shape[:-1], dtype=torch.long).to(device)
+            batch.update(
+                {
+                    "visual_embeds": visual_embeds,
+                    "visual_token_type_ids": visual_token_type_ids,
+                    "visual_attention_mask": visual_attention_mask,
+                }
+            )
+            batch.pop("ID")
+            outputs = self.model(**batch)
+            logits = outputs.logits
+            predictions = torch.argmax(logits, dim=-1).to(device)
+            correct = torch.sum(predictions == batch["labels"])
+            total_correct += correct
+            total += total+batch_size
+
+            
+            progress_bar.update(1)
+        print(total_correct / total)
+        return total_correct / total
+
 
 
 
