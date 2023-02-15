@@ -27,7 +27,7 @@ class ResnetModel:
         
     def test(self, datasets):
         eval_dataloader = torch.utils.data.DataLoader(
-            datasets["validation"], batch_size=8
+            datasets["valid"], batch_size=8
         )
         self.model.eval()
         for batch in eval_dataloader:
