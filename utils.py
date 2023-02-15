@@ -1,5 +1,6 @@
 from datasets import load_dataset, DatasetDict
 from torch.utils.data import DataLoader
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 def splitTrainTestVal(filepath):
     data_files = {"train": filepath}
@@ -24,7 +25,25 @@ def build_dataloaders(tokenized_ds, data_collator, batch_size = 8):
 
         return train_dataloader, eval_dataloader
 
+def compute_precision(preds, ground_truth):
+    return precision_score(ground_truth, preds, average='micro')
 
+def compute_recall(preds, ground_truth):
+    return recall_score(ground_truth, preds, average='micro')
+
+def compute_f1(preds, ground_truth):
+    return f1_score(ground_truth, preds, average='micro')
+
+def compute_accuracy(preds, ground_truth):
+    return accuracy_score(ground_truth, preds)
+
+def compute_metrics(preds, ground_truth):
+    return {
+        "accuracy": compute_accuracy(preds, ground_truth),
+        "precision": compute_precision(preds, ground_truth),
+        "recall": compute_recall(preds, ground_truth),
+        "f1": compute_f1(preds, ground_truth),
+    }
 
 if __name__ == "__main__":
     d = splitTrainTestVal("./MULTI-Fake-Detective_Task1_Data.tsv")

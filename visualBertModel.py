@@ -1,6 +1,6 @@
 from transformers import AdamW, AutoTokenizer, VisualBertForVisualReasoning, DataCollatorWithPadding, get_scheduler, TrainingArguments, Trainer
 import torch
-from NLPtests.utils import build_dataloaders
+from NLPtests.utils import build_dataloaders, compute_metrics
 from NLPtests.imagePreProcessing_2 import ImagePreProcessing as ImgPreProc
 from glob import glob
 from tqdm.auto import tqdm
@@ -97,8 +97,8 @@ class VisualBertModel:
         progress_bar = tqdm(range(len(eval_dataloader)))
         self.model.eval()
         self.model.to(device)
-        total=0
-        total_correct = 0
+        preds = []
+        gt = []
         for batch in eval_dataloader:
             with torch.no_grad():
                 batch = {k: v.to(device) for k, v in batch.items()}
@@ -121,15 +121,16 @@ class VisualBertModel:
                 batch.pop("ID")
                 outputs = self.model(**batch)
                 logits = outputs.logits
-                predictions = torch.argmax(logits, dim=-1).to(device)
-                correct = torch.sum(predictions == batch["labels"])
-                total_correct += correct
-                total += total+batch_size
+                predictions = torch.argmax(logits, dim=-1).to("cpu").tolist()
+                ground_truth = batch['labels'].to("cpu").tolist()
+                preds+=predictions
+                gt += ground_truth
 
                 
                 progress_bar.update(1)
-        print(total_correct / total)
-        return total_correct / total
+        
+        metrics = compute_metrics(preds, gt)
+        return metrics
 
 
 
