@@ -60,7 +60,7 @@ class ResnetModel:
 
                 outputs = self.model(**inputs)
                 logits = outputs.logits
-                predictions = torch.argmax(logits, dim=-1).to(device)
+                predictions = torch.argmax(logits, dim=-1).to(device).type(torch.float)
                 # compute the mean of the predictions across the images of each row
                 predictions_per_row = []
                 for number_of_row_images in images_per_row:
