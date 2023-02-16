@@ -16,6 +16,7 @@ from torchvision.transforms import (
 from torch.utils.data import Dataset
 import os
 import ast
+import math
 
 def pil_loader(path: str):
     with open(path, "rb") as f:
@@ -38,6 +39,8 @@ class ResnetModel:
             datasets["valid"], batch_size=8
         )
         self.model.eval()
+        total_predictions = []
+        ground_truth = []
         for batch in eval_dataloader:
             with torch.no_grad():
                 batch = {k: v for k, v in batch.items()}
@@ -64,10 +67,11 @@ class ResnetModel:
                 # compute the mean of the predictions across the images of each row
                 predictions_per_row = []
                 for number_of_row_images in images_per_row:
-                    predictions_per_row.append(torch.mean(predictions[:number_of_row_images]))
+                    predictions_per_row.append(math.round(torch.mean(predictions[:number_of_row_images]).item()))
                     predictions = predictions[number_of_row_images:]
-                print(predictions_per_row)
-                return logits
+                total_predictions+=predictions_per_row
+                ground_truth+=batch["Label"]
+        return total_predictions, ground_truth
                 
     def train(self, datasets, dir_name):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
