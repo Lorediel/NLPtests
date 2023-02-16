@@ -1,13 +1,9 @@
 from transformers import AutoImageProcessor, ResNetModel
 import torch
 from datasets import load_dataset
+from NLPtests.resnet import ResnetModel
+from NLPtests.utils import splitTrainTestVal
 
-dataset = load_dataset("huggingface/cats-image")
-image = dataset["test"]["image"][0]
-
-image_processor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
-model = ResNetModel.from_pretrained("microsoft/resnet-50")
-
-inputs = image_processor(image, return_tensors="pt")
-
-print(inputs["pixel_values"].shape)
+resnet = ResnetModel()
+datasets = splitTrainTestVal("/content/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv", delete_date = True)
+resnet.test(datasets, "/content/content/Media")

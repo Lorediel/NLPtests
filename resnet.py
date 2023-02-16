@@ -27,7 +27,7 @@ class ResnetModel:
 
     def __init__(self):
         self.image_processor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
-        self.model = ResNetForImageClassification.from_pretrained("microsoft/resnet-50", num_labels=4)
+        self.model = ResNetForImageClassification.from_pretrained("microsoft/resnet-50", num_labels=4, ignore_mismatched_sizes=True)
         
     def test(self, datasets, dir_name):
 
@@ -60,5 +60,20 @@ class ResnetModel:
 
                 outputs = self.model(**inputs)
                 logits = outputs.logits
+                predictions = torch.argmax(logits, dim=-1).to(device)
+                # compute the mean of the predictions across the images of each row
+                predictions_per_row = []
+                for number_of_row_images in images_per_row:
+                    predictions_per_row.append(torch.mean(predictions[:number_of_row_images]))
+                    predictions = predictions[number_of_row_images:]
+                print(predictions_per_row)
                 return logits
                 
+    def train(self, datasets, dir_name):
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.model.to(device)
+
+        train_dataloader = torch.utils.data.DataLoader(
+            datasets["train"], batch_size=8
+        )
+        self.model.train()
