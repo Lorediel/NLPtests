@@ -5,16 +5,6 @@ import numpy as np
 import torch
 from datasets import load_dataset
 from PIL import Image
-from torchvision.transforms import (
-    CenterCrop,
-    Compose,
-    Normalize,
-    RandomHorizontalFlip,
-    RandomResizedCrop,
-    Resize,
-    ToTensor,
-)
-from torch.utils.data import Dataset
 import os
 import ast
 import math
@@ -72,13 +62,16 @@ class ResnetModel:
                     logits = logits[number_of_row_images:]
                 logits = torch.stack(logits_per_row, dim=0)
 
-                predictions = torch.argmax(logits, dim=-1).to(device).type(torch.float)
+                predictions = torch.argmax(logits, dim=-1).to(device).type(torch.int).tolist()
                 
                 total_predictions+=predictions
                 ground_truth+=batch["Label"].tolist()
         return total_predictions, ground_truth
+
+    def load_model(self, model_path):
+        self.model = ResNetForImageClassification.from_pretrained(model_path, num_labels=4)
                 
-    def train(self, datasets, dir_name, lr = 5e-5, num_epochs = 3, warmup_steps = 0):
+    def train(self, datasets, dir_name, lr = 5e-5, num_epochs = 3, warmup_steps = 0, save_path = None):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(device)
 
@@ -132,6 +125,8 @@ class ResnetModel:
                 scheduler.step()
                 optimizer.zero_grad()
                 progress_bar.update(1)
+        if save_path is not None:
+            self.model.save_pretrained(save_path)
         return self.model
                 
 
