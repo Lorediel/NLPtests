@@ -1,5 +1,6 @@
 
-from transformers import AutoImageProcessor, ResNetModel, ResNetForImageClassification
+from transformers import AutoImageProcessor, ResNetModel, ResNetForImageClassification, AdamW, get_scheduler
+from tqdm.auto import tqdm
 import numpy as np
 import torch
 from datasets import load_dataset
@@ -17,6 +18,7 @@ from torch.utils.data import Dataset
 import os
 import ast
 import math
+
 
 def pil_loader(path: str):
     with open(path, "rb") as f:
@@ -63,17 +65,20 @@ class ResnetModel:
 
                 outputs = self.model(**inputs)
                 logits = outputs.logits
-                predictions = torch.argmax(logits, dim=-1).to(device).type(torch.float)
-                # compute the mean of the predictions across the images of each row
-                predictions_per_row = []
+                # compute the mean of the logits across the images of each row
+                logits_per_row = []
                 for number_of_row_images in images_per_row:
-                    predictions_per_row.append(math.round(torch.mean(predictions[:number_of_row_images]).item()))
-                    predictions = predictions[number_of_row_images:]
-                total_predictions+=predictions_per_row
-                ground_truth+=batch["Label"]
+                    logits_per_row.append(torch.mean(logits[:number_of_row_images], dim=0))
+                    logits = logits[number_of_row_images:]
+                logits = torch.stack(logits_per_row, dim=0)
+
+                predictions = torch.argmax(logits, dim=-1).to(device).type(torch.float)
+                
+                total_predictions+=predictions
+                ground_truth+=batch["Label"].tolist()
         return total_predictions, ground_truth
                 
-    def train(self, datasets, dir_name):
+    def train(self, datasets, dir_name, lr = 5e-5, num_epochs = 3, warmup_steps = 0):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(device)
 
@@ -81,3 +86,52 @@ class ResnetModel:
             datasets["train"], batch_size=8
         )
         self.model.train()
+        # Initialize the optimizer
+        optimizer = AdamW(self.model.parameters(), lr=lr)
+        num_training_steps=len(train_dataloader) * num_epochs
+        criterion = torch.nn.CrossEntropyLoss()
+        # Initialize the scheduler
+        scheduler = get_scheduler(
+            name="linear",
+            optimizer=optimizer,
+            num_warmup_steps=warmup_steps,
+            num_training_steps=num_training_steps
+        )
+        progress_bar = tqdm(range(num_training_steps))
+        for epoch in range(num_epochs):
+            for batch in train_dataloader:
+                batch = {k: v for k, v in batch.items()}
+                image_paths = batch["Media"]
+                
+                images = []
+                images_per_row = []
+                for row_paths in image_paths:
+                  number_of_row_images = 0
+                  for image_path in ast.literal_eval(row_paths): 
+                    number_of_row_images += 1
+                    image = pil_loader(os.path.join(dir_name, image_path))
+                    image = self.image_processor(image, return_tensors="pt")
+                    images.append(image["pixel_values"])
+                  images_per_row.append(number_of_row_images)
+
+                inputs = {}
+                inputs["pixel_values"] = torch.cat(images, 0)
+                inputs = {k: v.to(device) for k, v in inputs.items()}
+                outputs = self.model(**inputs)
+                logits = outputs.logits
+                # compute the mean of the logits across the images of each row
+                logits_per_row = []
+                for number_of_row_images in images_per_row:
+                    logits_per_row.append(torch.mean(logits[:number_of_row_images], dim=0))
+                    logits = logits[number_of_row_images:]
+                logits = torch.stack(logits_per_row, dim=0)
+                labels = batch["Label"].to(device)
+                loss = criterion(logits, labels)
+                loss.backward()
+                optimizer.step()
+                scheduler.step()
+                optimizer.zero_grad()
+                progress_bar.update(1)
+        return self.model
+                
+
