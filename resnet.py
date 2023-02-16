@@ -27,7 +27,7 @@ class ResnetModel:
 
     def __init__(self):
         self.image_processor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
-        self.model = ResNetForImageClassification.from_pretrained("microsoft/resnet-50")
+        self.model = ResNetForImageClassification.from_pretrained("microsoft/resnet-50", num_labels=4)
         
     def test(self, datasets, dir_name):
 
@@ -59,6 +59,6 @@ class ResnetModel:
                 inputs = {k: v.to(device) for k, v in inputs.items()}
 
                 outputs = self.model(**inputs)
-                last_hidden_states = outputs.last_hidden_state
-                return last_hidden_states
+                logits = outputs.logits
+                return logits
                 
