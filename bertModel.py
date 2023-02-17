@@ -1,9 +1,10 @@
 from transformers import AdamW, AutoTokenizer, AutoModelForSequenceClassification, DataCollatorWithPadding, get_scheduler, TrainingArguments, Trainer
 from torch.utils.data import DataLoader
-from NLPtests.utils import build_dataloaders
+from NLPtests.utils import build_dataloaders, compute_metrics as cm
 from tqdm.auto import tqdm
 import torch
 import numpy as np
+
 
 class BertModel:
     checkpoint = 'bert-base-uncased'
@@ -104,7 +105,7 @@ class BertModel:
 def compute_metrics(eval_preds):
     logits, labels = eval_preds
     predictions = np.argmax(logits, axis=-1)
-    return {"accuracy": (predictions == labels).astype(np.float32).mean().item()}
+    return cm(predictions, labels)
 
 
 """
