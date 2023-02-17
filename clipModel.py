@@ -6,6 +6,7 @@ import ast
 from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEncoderModel
 import os
 from tqdm.auto import tqdm
+from utils import *
 
 labels_for_classification =  ["certainly a fake news", 
                               "probably a fake news", 
@@ -20,14 +21,13 @@ class Model(nn.Module):
         
         self.base_model = VisionTextDualEncoderModel.from_pretrained("clip-italian/clip-italian")
         self.processor = AutoProcessor.from_pretrained("clip-italian/clip-italian")
-        self.linear = nn.Linear(768*2, 4) 
+        self.linear = nn.Linear(512*2, 4) 
         self.softmax = nn.Softmax(dim=1)
         
-    def forward(self, text, images, device):
-        inputs = self.processor(text=text, images= images, return_tensors="pt", padding=True)
-        inputs = {k: v.to(device) for k, v in inputs.items()}
+    def forward(self, input_ids, attention_mask, pixel_values):
+        
         # You write you new head here
-        outputs = self.base_model(**inputs)
+        outputs = self.base_model(input_ids, attention_mask, pixel_values, return_loss = True)
         num_of_images = len(images)
         logits = []
         for i in range(num_of_images):
@@ -80,18 +80,20 @@ class ClipModel:
 
 
 
-    def train(self, datasets, dir_name, lr = 5e-5, num_epochs = 3, warmup_steps = 0, save_path = None):
+    def train(self, train_ds, dir_name, lr = 5e-5, num_epochs = 3, warmup_steps = 0, save_path = None):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(device)
 
-        criterion = nn.CrossEntropyLoss()
-        train_dataloader = torch.utils.data.DataLoader(
-            datasets["train"], batch_size=8
+        dataloader = torch.utils.data.DataLoader(
+            train_ds, batch_size=8
         )
+
+        criterion = nn.CrossEntropyLoss()
+        
         self.model.train()
         # Initialize the optimizer
         optimizer = AdamW(self.model.parameters(), lr=lr)
-        num_training_steps=len(train_dataloader) * num_epochs
+        num_training_steps=len(dataloader) * num_epochs
         # Initialize the scheduler
         scheduler = get_scheduler(
             name="linear",
@@ -101,30 +103,17 @@ class ClipModel:
         )
         progress_bar = tqdm(range(num_training_steps))
         for epoch in range(num_epochs):
-            for batch in train_dataloader:
-                batch = {k: v for k, v in batch.items()}
-                image_paths = batch["Media"]
-                
-                images = []
-                images_per_row = []
-                for row_paths in image_paths:
-                  number_of_row_images = 0
-                  for image_path in ast.literal_eval(row_paths): 
-                    number_of_row_images += 1
-                    image = pil_loader(os.path.join(dir_name, image_path))
-                    images.append(image)
-                  images_per_row.append(number_of_row_images)
-                text = batch["Text"]
-                outputs = self.model(text, images, device)
-                logits = outputs["logits"]
-                probs = outputs["probs"]
-                labels = batch["Label"].to(device)
-                loss = criterion(logits, labels)
-                loss.backward()
+            for batch in dataloader:
+                batch = {k: v.to(device) for k, v in batch.items()}
+                print(batch)
+
+                #loss = criterion(logits, labels)
+                #loss.backward()
                 optimizer.step()
                 scheduler.step()
                 optimizer.zero_grad()
                 progress_bar.update(1)
+                break
         if save_path is not None:
             self.model.save_pretrained(save_path)
         return self.model

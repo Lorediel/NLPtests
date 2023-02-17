@@ -1,8 +1,27 @@
 from datasets import load_dataset, DatasetDict
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+import numpy as np
+from torch.utils.data import Dataset, Subset
 
-def splitTrainTestVal(filepath, delete_date = False):
+def splitDataset(dataset): 
+    # 80% train, 20% validation
+    validation_split = 0.2
+    random_seed = 64
+
+    dataset_size = len(dataset)
+    indices = list(range(dataset_size))
+    split = int(np.floor(validation_split * dataset_size))
+    np.random.seed(random_seed)
+    np.random.shuffle(indices)
+    train_indices, val_indices = indices[split:], indices[:split]
+    train_dataset = Subset(dataset, train_indices)
+    validation_dataset = Subset(dataset, val_indices)
+    
+    return train_dataset, validation_dataset
+
+
+def splitTrainTestVal(dataset, filepath, delete_date = False):
     data_files = {"train": filepath}
     dataset_dict = load_dataset("csv", data_files=filepath, delimiter="\t")
     if (delete_date):
@@ -16,7 +35,8 @@ def splitTrainTestVal(filepath, delete_date = False):
     'train': train_testvalid['train'],
     'valid': train_testvalid['test']})
     return train_test_valid_dataset
-    
+
+
 def build_dataloaders(tokenized_ds, data_collator, batch_size = 8):
         train_dataloader = DataLoader(
         tokenized_ds["train"], shuffle=True, batch_size=batch_size, collate_fn=data_collator
