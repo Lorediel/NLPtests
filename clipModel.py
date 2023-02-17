@@ -7,7 +7,7 @@ from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEnco
 import os
 from tqdm.auto import tqdm
 from NLPtests.utils import *
-from FakeNewsDataset import collate_fn
+from NLPtests.FakeNewsDataset import collate_fn
 
 labels_for_classification =  ["certainly a fake news", 
                               "probably a fake news", 
@@ -105,8 +105,9 @@ class ClipModel:
         progress_bar = tqdm(range(num_training_steps))
         for epoch in range(num_epochs):
             for batch in dataloader:
-                batch = {k: v.to(device) for k, v in batch.items()}
-                print(batch)
+                #batch = {k: v.to(device) for k, v in batch.items()}
+                inputs = self.model.processor(text=batch["Text"], images=batch["Media"], return_tensors="pt", padding=True)
+                print(inputs)
 
                 #loss = criterion(logits, labels)
                 #loss.backward()
