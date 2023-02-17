@@ -1,4 +1,3 @@
-# Do i need a dataset?
 import os
 import pandas as pd
 from torch.utils.data import Dataset, Subset
@@ -19,6 +18,7 @@ class FakeNewsDataset(Dataset):
         self.data = pd.read_csv(tsv_file, sep='\t')
         self.img_dir = image_dir
         self.transform = transforms.Compose([
+            transforms.Resize((224, 224)),
             transforms.ToTensor()
         ])
 
@@ -42,6 +42,33 @@ class FakeNewsDataset(Dataset):
             
         return {"id": id, "type": type, "text": text, "label": label, "images": images}
         
+
+def collate_fn(batch):
+    ids = []
+    types = []
+    texts = []
+    labels = []
+    images = []
+    max_images = 0
+    for sample in batch:
+        images_list = sample["images"]
+        #find the maximum number of images in a batch
+        num_images = len(images_list)
+        if num_images > max_images:
+            max_images = num_images
+        ids.append(sample["id"])
+        types.append(sample["type"])
+        texts.append(sample["text"])
+        labels.append(sample["label"])
+    for sample in batch:
+        images_list = sample["images"]
+        num_images = len(images_list)
+        #pad the images list with None
+        for i in range(num_images, max_images):
+            images_list.append(None)
+        images.append(images_list)
+    return {"id": ids, "type": types, "text": texts, "label": labels, "images": images}
+
 
 if __name__ == "__main__":
     
