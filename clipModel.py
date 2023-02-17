@@ -7,6 +7,7 @@ from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEnco
 import os
 from tqdm.auto import tqdm
 from NLPtests.utils import *
+from FakeNewsDataset import collate_fn
 
 labels_for_classification =  ["certainly a fake news", 
                               "probably a fake news", 
@@ -85,7 +86,7 @@ class ClipModel:
         self.model.to(device)
 
         dataloader = torch.utils.data.DataLoader(
-            train_ds, batch_size=8
+            train_ds, batch_size=8, collate_fn = collate_fn
         )
 
         criterion = nn.CrossEntropyLoss()
