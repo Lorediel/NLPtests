@@ -4,6 +4,8 @@ import pandas as pd
 from torch.utils.data import Dataset, Subset
 import ast
 from PIL import Image
+from torch.utils.data import DataLoader
+from torchvision import transforms
 
 
 def pil_loader(path: str):
@@ -16,6 +18,9 @@ class FakeNewsDataset(Dataset):
     def __init__(self, tsv_file, image_dir):
         self.data = pd.read_csv(tsv_file, sep='\t')
         self.img_dir = image_dir
+        self.transform = transforms.Compose([
+            transforms.ToTensor()
+        ])
 
     def __len__(self):
         return len(self.data)
@@ -30,14 +35,18 @@ class FakeNewsDataset(Dataset):
         img_paths = ast.literal_eval(row["Media"])
         images = []
         for img_path in img_paths:
-            images.append(pil_loader(os.path.join(self.img_dir, img_path)))
-        
+            #images.append(img_path)
+            image = pil_loader(os.path.join(self.img_dir, img_path))
+            transformed_image = self.transform(image)
+            images.append(transformed_image)
+            
         return {"id": id, "type": type, "text": text, "label": label, "images": images}
+        
 
 if __name__ == "__main__":
     
     dataset = FakeNewsDataset("/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv", "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
-    print(dataset[2])
-    indices = [0,2,3]
-    train_dataset = Subset(dataset, indices)
-    print(train_dataset[1])
+    dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
+    for batch in dataloader:
+        print(batch)
+        break

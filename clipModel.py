@@ -6,7 +6,7 @@ import ast
 from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEncoderModel
 import os
 from tqdm.auto import tqdm
-from utils import *
+from NLPtests.utils import *
 
 labels_for_classification =  ["certainly a fake news", 
                               "probably a fake news", 
@@ -80,7 +80,7 @@ class ClipModel:
 
 
 
-    def train(self, train_ds, dir_name, lr = 5e-5, num_epochs = 3, warmup_steps = 0, save_path = None):
+    def train(self, train_ds, lr = 5e-5, num_epochs = 3, warmup_steps = 0, save_path = None):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(device)
 
