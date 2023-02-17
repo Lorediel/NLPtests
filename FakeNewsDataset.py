@@ -5,6 +5,7 @@ import ast
 from PIL import Image
 from torch.utils.data import DataLoader
 from torchvision import transforms
+import torch
 
 
 def pil_loader(path: str):
@@ -39,7 +40,7 @@ class FakeNewsDataset(Dataset):
             image = pil_loader(os.path.join(self.img_dir, img_path))
             transformed_image = self.transform(image)
             images.append(transformed_image)
-            
+        
         return {"id": id, "type": type, "text": text, "label": label, "images": images}
         
 
@@ -60,14 +61,17 @@ def collate_fn(batch):
         types.append(sample["type"])
         texts.append(sample["text"])
         labels.append(sample["label"])
+    images_mask = torch.zeros(len(batch), max_images)
+    print(images_mask)
     for sample in batch:
         images_list = sample["images"]
         num_images = len(images_list)
-        #pad the images list with None
+        #pad the images list with a tensor of zeros
         for i in range(num_images, max_images):
-            images_list.append(None)
+            images_list.append(torch.zeros(3, 224, 224))
+        
         images.append(images_list)
-    return {"id": ids, "type": types, "text": texts, "label": labels, "images": images}
+    return {"id": ids, "type": types, "text": texts, "label": labels, "num_images": list_of_num_images, "images": images}
 
 
 if __name__ == "__main__":

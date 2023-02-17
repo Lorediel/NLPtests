@@ -106,7 +106,7 @@ class ClipModel:
         for epoch in range(num_epochs):
             for batch in dataloader:
                 #batch = {k: v.to(device) for k, v in batch.items()}
-                inputs = self.model.processor(text=batch["Text"], images=batch["Media"], return_tensors="pt", padding=True)
+                inputs = self.model.processor(text=batch["Ttext"], images=batch["images"], return_tensors="pt", padding=True)
                 print(inputs)
 
                 #loss = criterion(logits, labels)
