@@ -18,8 +18,8 @@ class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
         
-        self.base_model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14")
-        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
+        self.base_model = CLIPModel.from_pretrained("clip-italian/clip-italian")
+        self.processor = CLIPProcessor.from_pretrained("clip-italian/clip-italian")
         self.linear = nn.Linear(768*2, 4) 
         self.softmax = nn.Softmax(dim=1)
         

@@ -1,25 +1,35 @@
 # Do i need a dataset?
 import os
 import pandas as pd
-from torchvision.io import read_image
+from torch.utils.data import Dataset
+import ast
+from PIL import Image
+
+def pil_loader(path: str):
+    with open(path, "rb") as f:
+        im = Image.open(f)
+        return im.convert("RGB")
 
 
 class FakeNewsDataset(Dataset):
-    def __init__(self, annotations_file, img_dir, transform=None, target_transform=None):
-        self.img_labels = pd.read_csv(annotations_file)
-        self.img_dir = img_dir
-        self.transform = transform
-        self.target_transform = target_transform
+    def __init__(self, tsv_file, image_dir):
+        self.data = pd.read_csv(tsv_file, sep='\t')
+        self.img_dir = image_dir
 
     def __len__(self):
-        return len(self.img_labels)
+        return len(self.data)
 
     def __getitem__(self, idx):
-        img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
-        image = read_image(img_path)
-        label = self.img_labels.iloc[idx, 1]
-        if self.transform:
-            image = self.transform(image)
-        if self.target_transform:
-            label = self.target_transform(label)
-        return image, label
+        row = self.data.loc[idx]
+        id = row["ID"]
+        type = row["Type"]
+        text = row["Text"]
+        label = row["Label"]
+
+        img_paths = ast.literal_eval(row["Media"])
+        images = []
+        for img_path in img_paths:
+            images.append(pil_loader(os.path.join(self.img_dir, img_path)))
+        
+        return {"id": id, "type": type, "text": text, "label": label, "images": images}
+

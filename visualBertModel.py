@@ -125,7 +125,7 @@ class VisualBertModel:
                 ground_truth = batch['labels'].to("cpu").tolist()
                 preds+=predictions
                 gt += ground_truth
-
+                
                 
                 progress_bar.update(1)
         
