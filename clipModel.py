@@ -3,7 +3,7 @@ import requests
 import torch
 import torch.nn as nn
 import ast
-from transformers import CLIPProcessor, CLIPModel,AdamW, get_scheduler
+from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEncoderModel
 import os
 from tqdm.auto import tqdm
 
@@ -18,8 +18,8 @@ class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
         
-        self.base_model = CLIPModel.from_pretrained("clip-italian/clip-italian")
-        self.processor = CLIPProcessor.from_pretrained("clip-italian/clip-italian")
+        self.base_model = VisionTextDualEncoderModel.from_pretrained("clip-italian/clip-italian")
+        self.processor = AutoProcessor.from_pretrained("clip-italian/clip-italian")
         self.linear = nn.Linear(768*2, 4) 
         self.softmax = nn.Softmax(dim=1)
         
