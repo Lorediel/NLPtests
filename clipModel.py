@@ -3,7 +3,7 @@ import requests
 import torch
 import torch.nn as nn
 import ast
-from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEncoderModel
+from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEncoderModel, AutoTokenizer, AutoFeatureExtractor
 import os
 from tqdm.auto import tqdm
 from NLPtests.utils import *
@@ -22,6 +22,8 @@ class Model(nn.Module):
         
         self.base_model = VisionTextDualEncoderModel.from_pretrained("clip-italian/clip-italian")
         self.processor = AutoProcessor.from_pretrained("clip-italian/clip-italian")
+        self.tokenizer = AutoTokenizer.from_pretrained("clip-italian/clip-italian")
+        self.feature_extractor = AutoFeatureExtractor.from_pretrained("openai/clip-vit-base-patch32")
         self.linear = nn.Linear(512*2, 4) 
         self.softmax = nn.Softmax(dim=1)
         
@@ -111,18 +113,14 @@ class ClipModel:
                 images_list = batch["images"]
                 mask = batch["images_mask"]
                 inputs = []
-                for text, images in zip(texts, images_list):
-                    bool_mask = torch.tensor(mask, dtype=torch.bool)
-                    images = images[bool_mask]
-                    input_dict = self.processor(text=text, images=images, return_tensors='pt')
-                    inputs.append(input_dict)
-
-                # batch inputs
-                batch_inputs = {}
-                for key in inputs[0]:
-                    batch_inputs[key] = torch.cat([input_dict[key] for input_dict in inputs], dim=0)
-
-                print(batch_inputs)
+                
+                text_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True)
+                for images in images_list:
+                    image_inputs = self.model.feature_extractor(images=images, return_tensors="pt")
+                    inputs.append(image_inputs)
+                labels = batch["label"]
+                for k in range(8):
+                    print(image_inputs[k].shape)
 
                 #loss = criterion(logits, labels)
                 #loss.backward()
