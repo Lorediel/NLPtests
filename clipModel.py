@@ -26,25 +26,33 @@ class Model(nn.Module):
         self.feature_extractor = AutoFeatureExtractor.from_pretrained("openai/clip-vit-base-patch32")
         self.linear = nn.Linear(512*2, 4) 
         self.softmax = nn.Softmax(dim=1)
-        
-    def forward(self, id, type, text, label, images_mask, images):
-        
-        """
-        # You write you new head here
-        outputs = self.base_model(input_ids, attention_mask, pixel_values, return_loss = True)
-        num_of_images = len(images)
-        logits = []
-        for i in range(num_of_images):
-            single_outputs = torch.cat((outputs.image_embeds[i], outputs.text_embeds[0]), 0)
-            out = self.linear(single_outputs)
-            logits.append(out)
-        #compute the mean of the logits
-        logits = torch.mean(torch.stack(logits), dim=0)
 
-        probs = self.softmax(logits)
+    def forward(self, input_ids, attention_mask, pixel_values, nums_images):
         
-        return {"logits":logits, "probs": probs}
-        """
+        t_embeddings = self.base.model.get_text_features(
+            input_ids=input_ids, attention_mask=attention_mask
+        )
+
+        i_embeddings = self.base.model.get_image_features(pixel_values = pixel_values)
+
+        #compute the max of the emnbeddings
+        embeddings_images = []
+        base = 0
+        for i in range(len(nums_images)):
+            tensor = i_embeddings[base:base+nums_images[i]]
+            max_tensor, _ = torch.max(tensor, dim=0, keepdim=True)
+            embeddings_images.append(max_tensor)
+            base += nums_images[i]
+        
+        embeddings_images = torch.cat(embeddings_images, dim=0)
+        embeddings = torch.cat((t_embeddings, embeddings_images), dim=1)
+        logits = self.linear(embeddings)
+        probs = self.softmax(logits)
+        return probs
+
+
+
+        
 
 def pil_loader(path: str):
     with open(path, "rb") as f:
@@ -112,18 +120,31 @@ class ClipModel:
                 texts = batch["text"]
                 images_list = batch["images"]
                 mask = batch["images_mask"]
-                inputs = []
-                
-                text_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True)
-                for images in images_list:
-                    image_inputs = self.model.feature_extractor(images=images, return_tensors="pt")
-                    inputs.append(image_inputs)
-                labels = batch["label"]
-                for k in range(8):
-                    print(image_inputs[k].shape)
+                labels = batch["labels"]
 
-                #loss = criterion(logits, labels)
-                #loss.backward()
+                # mask and flatten the list of images 
+                nums_images = []
+                for m in mask:
+                    nums_images.append(sum(m))
+                images_list = [item for sublist, mask_sublist in zip(images_list, mask)
+                          for item, mask_value in zip(sublist, mask_sublist) 
+                          if mask_value]
+
+                
+                t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True)
+                i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
+                
+                outputs = self.model(
+                    input_ids=t_inputs.input_ids,
+                    attention_mask=i_inputs.attention_mask,
+                    pixel_values=i_inputs.pixel_values,
+                    nums_images = nums_images,
+                )
+                
+                logits = outputs.logits
+                
+                loss = criterion(logits, labels)
+                loss.backward()
                 optimizer.step()
                 scheduler.step()
                 optimizer.zero_grad()

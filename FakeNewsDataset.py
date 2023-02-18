@@ -73,6 +73,8 @@ def collate_fn(batch):
         for i in range(num_images):
             images_mask[batch.index(sample)][i] = 1
         images.append(images_list)
+    
+    
     return {"id": ids, "type": types, "text": texts, "label": labels, "images_mask": images_mask, "images": images}
 
 
