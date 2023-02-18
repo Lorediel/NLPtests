@@ -26,7 +26,7 @@ class Model(nn.Module):
         self.softmax = nn.Softmax(dim=1)
         
     def forward(self, id, type, text, label, images_mask, images):
-        inputs = self.model.processor(text=text, images=images, return_tensors="pt", padding=True)
+        inputs = self.processor(text=text, images=images, return_tensors="pt", padding=True)
         """
         # You write you new head here
         outputs = self.base_model(input_ids, attention_mask, pixel_values, return_loss = True)
@@ -43,7 +43,6 @@ class Model(nn.Module):
         
         return {"logits":logits, "probs": probs}
         """
-
 
 def pil_loader(path: str):
     with open(path, "rb") as f:
@@ -109,16 +108,14 @@ class ClipModel:
             for batch in dataloader:
                 #batch = {k: v.to(device) for k, v in batch.items()}
                 
-                self.model(**batch)
+                out = self.model(**batch)
 
                 #loss = criterion(logits, labels)
                 #loss.backward()
-                """
                 optimizer.step()
                 scheduler.step()
                 optimizer.zero_grad()
                 progress_bar.update(1)
-                """
                 break
         if save_path is not None:
             self.model.save_pretrained(save_path)

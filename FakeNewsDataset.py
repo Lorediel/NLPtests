@@ -73,7 +73,7 @@ def collate_fn(batch):
         for i in range(num_images):
             images_mask[batch.index(sample)][i] = 1
         images.append(images_list)
-    return {"id": ids, "type": types, "text": texts, "label": labels, "images_mask": images_mask, "images": images}
+    return {"id": ids, "type": types, "text": torch.tensor(texts), "label": labels, "images_mask": torch.tensor(images_mask), "images": torch.tensor(images)}
 
 
 if __name__ == "__main__":
