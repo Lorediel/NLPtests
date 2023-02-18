@@ -138,8 +138,7 @@ class ClipModel:
                     t_inputs[k] = v.to(device)
                 for k, v in i_inputs.items():
                     i_inputs[k] = v.to(device)
-                labels = labels.to(device)
-                
+
                 outputs = self.model(
                     input_ids=t_inputs.input_ids,
                     attention_mask=t_inputs.attention_mask,
