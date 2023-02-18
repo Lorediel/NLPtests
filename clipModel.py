@@ -26,7 +26,7 @@ class Model(nn.Module):
         self.softmax = nn.Softmax(dim=1)
         
     def forward(self, id, type, text, label, images_mask, images):
-        inputs = self.processor(text=text, images=images, return_tensors="pt", padding=True)
+        
         """
         # You write you new head here
         outputs = self.base_model(input_ids, attention_mask, pixel_values, return_loss = True)
@@ -107,8 +107,22 @@ class ClipModel:
         for epoch in range(num_epochs):
             for batch in dataloader:
                 #batch = {k: v.to(device) for k, v in batch.items()}
-                
-                out = self.model(**batch)
+                texts = batch["text"]
+                images_list = batch["images"]
+                mask = batch["images_mask"]
+                inputs = []
+                for text, images in zip(texts, images_list):
+                    bool_mask = torch.tensor(mask, dtype=torch.bool)
+                    images = images[bool_mask]
+                    input_dict = self.processor(text=text, images=images, return_tensors='pt')
+                    inputs.append(input_dict)
+
+                # batch inputs
+                batch_inputs = {}
+                for key in inputs[0]:
+                    batch_inputs[key] = torch.cat([input_dict[key] for input_dict in inputs], dim=0)
+
+                print(batch_inputs)
 
                 #loss = criterion(logits, labels)
                 #loss.backward()
