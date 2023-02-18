@@ -29,11 +29,11 @@ class Model(nn.Module):
 
     def forward(self, input_ids, attention_mask, pixel_values, nums_images):
         
-        t_embeddings = self.base.model.get_text_features(
+        t_embeddings = self.base_model.get_text_features(
             input_ids=input_ids, attention_mask=attention_mask
         )
 
-        i_embeddings = self.base.model.get_image_features(pixel_values = pixel_values)
+        i_embeddings = self.base_model.get_image_features(pixel_values = pixel_values)
 
         #compute the max of the emnbeddings
         embeddings_images = []
@@ -120,7 +120,7 @@ class ClipModel:
                 texts = batch["text"]
                 images_list = batch["images"]
                 mask = batch["images_mask"]
-                labels = batch["labels"]
+                labels = batch["label"]
 
                 # mask and flatten the list of images 
                 nums_images = []
@@ -131,12 +131,18 @@ class ClipModel:
                           if mask_value]
 
                 
-                t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True)
+                t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True, truncation=True)
                 i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
+                
+                for k, v in t_inputs.items():
+                    t_inputs[k] = v.to(device)
+                for k, v in i_inputs.items():
+                    i_inputs[k] = v.to(device)
+                labels = labels.to(device)
                 
                 outputs = self.model(
                     input_ids=t_inputs.input_ids,
-                    attention_mask=i_inputs.attention_mask,
+                    attention_mask=t_inputs.attention_mask,
                     pixel_values=i_inputs.pixel_values,
                     nums_images = nums_images,
                 )
