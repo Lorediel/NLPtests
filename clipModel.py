@@ -176,7 +176,7 @@ class ClipModel:
                     eval_metrics = self.eval(eval_ds)
                     f1_score = eval_metrics["f1"]
                     if f1_score > best_eval:
-                        torch.save(self.model.state_dict(), os.path.join(save_path, "best_model"))
+                        torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
                     self.model.train()
                 
 
@@ -187,6 +187,10 @@ class ClipModel:
                 progress_bar.update(1)
                 
         
+        return self.model
+    
+    def load_model(self, path):
+        self.model.load_state_dict(torch.load(path))
         return self.model
                 
 
