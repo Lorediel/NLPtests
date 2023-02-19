@@ -1,5 +1,7 @@
 def mean(lst):
     return sum(lst) / len(lst)
 
-x = mean([1,2,3])
-print(x)
+lst = [1,2,3]
+x = lst[1:2]
+y = mean(x)
+print(y)

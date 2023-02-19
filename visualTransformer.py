@@ -11,8 +11,8 @@ def mean(l):
 class VisualTransformer():
 
     def __init__(self):
-        self.processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224", num_labels=4)
-        self.model = ViTForImageClassification.from_pretrained("google/vit-base-patch16-224")
+        self.processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
+        self.model = ViTForImageClassification.from_pretrained("google/vit-base-patch16-224", num_labels=4, ignore_mismatched_sizes=True)
     
     def train(self, train_ds, val_ds, num_epochs= 3, lr = 5e-5,  warmup_steps = 0, batch_size = 8):
 
@@ -40,7 +40,7 @@ class VisualTransformer():
                
                 images_list = batch["images"]
                 mask = batch["images_mask"]
-                labels = batch["label"].to(device)
+                labels = batch["label"]
 
                 nums_images = []
                 for m in mask:
@@ -56,12 +56,14 @@ class VisualTransformer():
                 outputs = self.model(**inputs)
 
                 # get predictions
-                preds = outputs.logits.argmax(dim=-1)
+                preds = outputs.logits.argmax(dim=-1).tolist()
                 final_preds = []
                 # make the mean based on the number of images
                 base = 0
                 for i in range(len(nums_images)):
+                    print(preds[base:base+nums_images[i]])
                     final_preds.append(floor(mean(preds[base:base+nums_images[i]])))
+                    base += nums_images[i]
                 print(final_preds)
                     
 
