@@ -48,20 +48,21 @@ class VisualTransformer():
                 images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
                           for item, mask_value in zip(sublist, mask_sublist) 
                           if mask_value]
-
+                print(mask)
+                print(nums_images)
                 inputs = self.processor(images = images_list, return_tensors="pt")
                 for k, v in inputs.items():
                     inputs[k] = v.to(device)
                 
-                outputs = self.model(**inputs)
-
+                outputs = self.model(**inputs, return_loss = True, labels = torch.tensor(labels).to(device))
+                
                 # get predictions
                 preds = outputs.logits.argmax(dim=-1).tolist()
+                print(preds)
                 final_preds = []
                 # make the mean based on the number of images
                 base = 0
                 for i in range(len(nums_images)):
-                    print(preds[base:base+nums_images[i]])
                     final_preds.append(floor(mean(preds[base:base+nums_images[i]])))
                     base += nums_images[i]
                 print(final_preds)
