@@ -149,13 +149,15 @@ class ClipModel:
                 
                 logits = outputs[0]
                 
+                metrics = compute_metrics(logits, labels)
+                print(metrics)
                 loss = criterion(logits, labels)
                 loss.backward()
                 optimizer.step()
                 scheduler.step()
                 optimizer.zero_grad()
                 progress_bar.update(1)
-                break
+                
         if save_path is not None:
             self.model.save_pretrained(save_path)
         return self.model
