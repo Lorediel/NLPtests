@@ -3,16 +3,11 @@ import requests
 import torch
 import torch.nn as nn
 import ast
-from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEncoderModel, AutoTokenizer, AutoFeatureExtractor
+from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEncoderModel, AutoTokenizer, AutoFeatureExtractor, PretrainedConfig, PreTrainedModel
 import os
 from tqdm.auto import tqdm
 from NLPtests.utils import *
 from NLPtests.FakeNewsDataset import collate_fn
-
-labels_for_classification =  ["certainly a fake news", 
-                              "probably a fake news", 
-                              "probably a real news",
-                              "certainly a real news"]
 
 
 
@@ -97,7 +92,7 @@ class ClipModel:
                 for k, v in i_inputs.items():
                     i_inputs[k] = v.to(device)
                 
-                
+                nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
                 logits, probs = self.model(
                     input_ids=t_inputs.input_ids,
                     attention_mask=t_inputs.attention_mask,
@@ -119,9 +114,6 @@ class ClipModel:
 
         dataloader = torch.utils.data.DataLoader(
             train_ds, batch_size=8, collate_fn = collate_fn
-        )
-        eval_dataloader = torch.utils.data.DataLoader(
-            eval_ds, batch_size=8, collate_fn = collate_fn
         )
 
         criterion = nn.CrossEntropyLoss()
@@ -181,10 +173,10 @@ class ClipModel:
                 preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
                 loss = criterion(logits, labels)
                 if (current_step % num_eval_steps == 0):
-                    eval_metrics = self.eval(eval_dataloader)
+                    eval_metrics = self.eval(eval_ds)
                     f1_score = eval_metrics["f1"]
                     if f1_score > best_eval:
-                        self.model.save_pretrained(os.path.join(save_path, "best_model"))
+                        torch.save(self.model.state_dict(), os.path.join(save_path, "best_model"))
                     self.model.train()
                 
 
