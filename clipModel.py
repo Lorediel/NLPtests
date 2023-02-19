@@ -173,6 +173,7 @@ class ClipModel:
                 preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
                 loss = criterion(logits, labels)
                 if (current_step % num_eval_steps == 0):
+                    print("Loss: ", loss.item())
                     eval_metrics = self.eval(eval_ds)
                     f1_score = eval_metrics["f1"]
                     if f1_score > best_eval:
