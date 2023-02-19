@@ -38,7 +38,6 @@ class Model(nn.Module):
         #compute the max of the emnbeddings
         embeddings_images = []
         base = 0
-        nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
         for i in range(len(nums_images)):
             tensor = i_embeddings[base:base+nums_images[i]]
             max_tensor, _ = torch.max(tensor, dim=0, keepdim=True)
@@ -140,6 +139,7 @@ class ClipModel:
                 for k, v in i_inputs.items():
                     i_inputs[k] = v.to(device)
                 labels = torch.tensor(labels).to(device)
+                nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
                 outputs = self.model(
                     input_ids=t_inputs.input_ids,
                     attention_mask=t_inputs.attention_mask,
@@ -149,7 +149,8 @@ class ClipModel:
                 
                 logits = outputs[0]
                 
-                metrics = compute_metrics(logits, labels)
+                preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
+                metrics = compute_metrics(preds, batch["label"])
                 print(metrics)
                 loss = criterion(logits, labels)
                 loss.backward()

@@ -81,7 +81,5 @@ def collate_fn(batch):
 if __name__ == "__main__":
     
     dataset = FakeNewsDataset("/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv", "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
-    dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
-    for batch in dataloader:
-        print(batch)
-        break
+    # get the first 1000 samples
+    dataset = Subset(dataset, range(1000))
