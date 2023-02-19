@@ -66,7 +66,7 @@ class ClipModel:
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.eval()
         dataloader = torch.utils.data.DataLoader(
-            ds, batch_size=8, collate_fn = collate_fn
+            ds, batch_size=8,shuffle=True, collate_fn = collate_fn
         )
         total_preds = []
         total_labels = []
@@ -113,7 +113,7 @@ class ClipModel:
         self.model.to(device)
 
         dataloader = torch.utils.data.DataLoader(
-            train_ds, batch_size=8, collate_fn = collate_fn
+            train_ds, batch_size=8, shuffle=True, collate_fn = collate_fn
         )
 
         criterion = nn.CrossEntropyLoss()
@@ -131,7 +131,8 @@ class ClipModel:
         )
         progress_bar = tqdm(range(num_training_steps))
         current_step = 0
-        best_eval = -1
+        # save the 3 best models
+        best_metrics = [0, 0, 0]
         for epoch in range(num_epochs):
             for batch in dataloader:
                 current_step += 1
@@ -176,8 +177,12 @@ class ClipModel:
                     print("Loss: ", loss.item())
                     eval_metrics = self.eval(eval_ds)
                     f1_score = eval_metrics["f1"]
-                    if f1_score > best_eval:
-                        torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
+                    if f1_score > min(best_metrics):
+                        best_metrics.remove(min(best_metrics))
+                        best_metrics.append(f1_score)
+                        torch.save(self.model.state_dict(), os.path.join(save_path, "best_model_{}.pth".format(f1_score)))
+                    #if f1_score > best_eval:
+                        #torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
                     self.model.train()
                 
 
