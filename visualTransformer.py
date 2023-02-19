@@ -3,6 +3,10 @@ import torch
 from tqdm.auto import tqdm
 from NLPtests.utils import *
 from NLPtests.FakeNewsDataset import collate_fn
+from math import floor
+
+def mean(l):
+    return sum(l) / len(l)
 
 class VisualTransformer():
 
@@ -31,12 +35,12 @@ class VisualTransformer():
         progress_bar = tqdm(range(num_training_steps))
         for epoch in range(num_epochs):
             for batch in dataloader:
-                current_step += 1
+                #current_step += 1
                 #batch = {k: v.to(device) for k, v in batch.items()}
                
                 images_list = batch["images"]
                 mask = batch["images_mask"]
-                labels = batch["label"]
+                labels = batch["label"].to(device)
 
                 nums_images = []
                 for m in mask:
@@ -46,4 +50,26 @@ class VisualTransformer():
                           if mask_value]
 
                 inputs = self.processor(images = images_list, return_tensors="pt")
-                print(inputs)
+                for k, v in inputs.items():
+                    inputs[k] = v.to(device)
+                
+                outputs = self.model(**inputs)
+
+                # get predictions
+                preds = outputs.logits.argmax(dim=-1)
+                final_preds = []
+                # make the mean based on the number of images
+                base = 0
+                for i in range(len(nums_images)):
+                    final_preds.append(floor(mean(preds[base:base+nums_images[i]])))
+                print(final_preds)
+                    
+
+                loss = outputs.loss
+                loss.backward()
+                optimizer.step()
+                scheduler.step()
+                optimizer.zero_grad()
+                progress_bar.update(1)
+
+                break
