@@ -70,6 +70,7 @@ class ClipModel:
         )
         total_preds = []
         total_labels = []
+        progress_bar = tqdm(range(len(dataloader)))
         with torch.no_grad():
             for batch in dataloader:
                 texts = batch["text"]
@@ -103,6 +104,7 @@ class ClipModel:
                 preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
                 total_preds += list(preds)
                 total_labels += list(labels)
+                progress_bar.update(1)
         metrics = compute_metrics(total_labels, total_preds)
         return metrics
 
@@ -174,8 +176,10 @@ class ClipModel:
                 preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
                 loss = criterion(logits, labels)
                 if (current_step % num_eval_steps == 0):
+                    print("Epoch: ", epoch)
                     print("Loss: ", loss.item())
                     eval_metrics = self.eval(eval_ds)
+                    print("Eval metrics: ", eval_metrics)
                     f1_score = eval_metrics["f1"]
                     if f1_score > min(best_metrics):
                         best_metrics.remove(min(best_metrics))
