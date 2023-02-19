@@ -70,16 +70,13 @@ def collate_fn(batch):
         for i in range(num_images, max_images):
             images_list.append(torch.zeros(3, 224, 224))
         #create a mask for the images
-        for i in range(num_images):
-            images_mask[batch.index(sample)][i] = 1
+        for j in range(len(batch)):
+            for i in range(num_images):
+                images_mask[j][i] = 1
+                #images_mask[batch.index(sample)][i] = 1
         images.append(images_list)
     
     
     return {"id": ids, "type": types, "text": texts, "label": labels, "images_mask": images_mask, "images": images}
 
 
-if __name__ == "__main__":
-    
-    dataset = FakeNewsDataset("/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv", "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
-    # get the first 1000 samples
-    dataset = Subset(dataset, range(1000))
