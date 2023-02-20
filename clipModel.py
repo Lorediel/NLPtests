@@ -62,11 +62,11 @@ class ClipModel:
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(self.device)
 
-    def eval(self, ds):
+    def eval(self, ds, batch_size=8):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.eval()
         dataloader = torch.utils.data.DataLoader(
-            ds, batch_size=8,shuffle=True, collate_fn = collate_fn
+            ds, batch_size=batch_size,shuffle=True, collate_fn = collate_fn
         )
         total_preds = []
         total_labels = []
@@ -110,12 +110,12 @@ class ClipModel:
 
 
 
-    def train(self, train_ds, eval_ds, lr = 5e-5, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./"):
+    def train(self, train_ds, eval_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./"):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(device)
 
         dataloader = torch.utils.data.DataLoader(
-            train_ds, batch_size=8, shuffle=True, collate_fn = collate_fn
+            train_ds, batch_size=batch_size, shuffle=True, collate_fn = collate_fn
         )
 
         criterion = nn.CrossEntropyLoss()
@@ -178,7 +178,7 @@ class ClipModel:
                 if (current_step % num_eval_steps == 0):
                     print("Epoch: ", epoch)
                     print("Loss: ", loss.item())
-                    eval_metrics = self.eval(eval_ds)
+                    eval_metrics = self.eval(eval_ds, batch_size=batch_size)
                     print("Eval metrics: ", eval_metrics)
                     f1_score = eval_metrics["f1"]
                     if f1_score > best_metric:
