@@ -45,7 +45,7 @@ class VisualTransformer():
 
     def __init__(self):
         self.processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
-        self.model = ViTForImageClassification.from_pretrained("google/vit-base-patch16-224", num_labels=4, ignore_mismatched_sizes=True)
+        self.model = ViTModel.from_pretrained("google/vit-base-patch16-224")
     
     def train(self, train_ds, val_ds, num_epochs= 3, lr = 5e-5,  warmup_steps = 0, batch_size = 8, num_eval_steps = 10, save_path = "./"):
 
