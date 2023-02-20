@@ -131,16 +131,8 @@ class VisualTransformer():
 
                 loss = criterion(logits, labels_tensor)
 
-                # get predictions
-                preds = outputs[0].argmax(dim=-1).tolist()
-                
-                # get metrics   
-                metrics = compute_metrics(preds, labels)
-                
 
                 best_metric = 0
-                
-                loss = outputs.loss
 
                 
                 if (current_step % num_eval_steps == 0):
