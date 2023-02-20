@@ -53,8 +53,8 @@ class VisualTransformer():
                 inputs = self.processor(images = images_list, return_tensors="pt")
                 for k, v in inputs.items():
                     inputs[k] = v.to(device)
-                
-                outputs = self.model(**inputs, return_loss = True, labels = torch.tensor(labels).to(device))
+                #moltiplicare le labels per il numero di immagini
+                outputs = self.model(**inputs, labels = torch.tensor(labels).to(device))
                 
                 # get predictions
                 preds = outputs.logits.argmax(dim=-1).tolist()
