@@ -5,6 +5,7 @@ from NLPtests.utils import *
 from NLPtests.FakeNewsDataset import collate_fn
 from math import floor
 from NLPtests.utils import *
+import os
 import torch.nn as nn
 
 class Model(nn.Module):
@@ -38,14 +39,49 @@ class Model(nn.Module):
         return logits, probs
 
 
-def mean(l):
-    return sum(l) / len(l)
+
 
 class VisualTransformer():
 
     def __init__(self):
         self.model = Model()
+
+    def eval(self, ds, batch_size = 8):
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.model.eval()
+        dataloader = torch.utils.data.DataLoader(
+            ds, batch_size=batch_size, collate_fn = collate_fn
+        )
+        total_preds = []
+        total_labels = []
+        progress_bar = tqdm(range(len(dataloader)))
     
+        with torch.no_grad():
+            for batch in dataloader:
+                images_list = batch["images"]
+                mask = batch["images_mask"]
+                labels = batch["label"]
+
+                nums_images = []
+                for m in mask:
+                    nums_images.append(sum(m))
+                images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
+                          for item, mask_value in zip(sublist, mask_sublist) 
+                          if mask_value]
+                
+                inputs = self.model.processor(images = images_list, return_tensors="pt")
+                for k, v in inputs.items():
+                    inputs[k] = v.to(device)
+                
+                nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
+                logits, _ = self.model(inputs["pixel_values"], nums_images)
+                preds = logits.argmax(dim=-1).tolist()
+                total_preds += list(preds)
+                total_labels += list(labels)
+                progress_bar.update(1)
+        metrics = compute_metrics(total_labels, total_preds)
+        return metrics
+
     def train(self, train_ds, val_ds, num_epochs= 3, lr = 5e-5,  warmup_steps = 0, batch_size = 8, num_eval_steps = 10, save_path = "./"):
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -83,13 +119,13 @@ class VisualTransformer():
                           for item, mask_value in zip(sublist, mask_sublist) 
                           if mask_value]
                 
-                inputs = self.processor(images = images_list, return_tensors="pt")
+                inputs = self.model.processor(images = images_list, return_tensors="pt")
                 for k, v in inputs.items():
                     inputs[k] = v.to(device)
                 
                 labels_tensor = torch.tensor(labels).to(device)
                 
-                outputs = self.model(**inputs, nums_images)
+                outputs = self.model(inputs["pixel_values"], nums_images)
 
                 logits = outputs[0]
 
@@ -100,31 +136,30 @@ class VisualTransformer():
                 
                 # get metrics   
                 metrics = compute_metrics(preds, labels)
-                print(metrics)
+                
 
                 best_metric = 0
                 
                 loss = outputs.loss
 
-                """
+                
                 if (current_step % num_eval_steps == 0):
                     print("Epoch: ", epoch)
                     print("Loss: ", loss.item())
-                    eval_metrics = self.eval(eval_ds)
+                    eval_metrics = self.eval(val_ds)
                     print("Eval metrics: ", eval_metrics)
                     f1_score = eval_metrics["f1"]
                     if f1_score > best_metric:
                         best_metric = f1_score
                         torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
-                    #if f1_score > best_eval:
-                        #torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
                     self.model.train()
-                """
+                
                 current_step += 1
                 loss.backward()
                 optimizer.step()
                 scheduler.step()
                 optimizer.zero_grad()
                 progress_bar.update(1)
-
-                break
+        
+        return self.model, best_metric
+        
