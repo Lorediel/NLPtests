@@ -133,8 +133,8 @@ class ClipModel:
         )
         progress_bar = tqdm(range(num_training_steps))
         current_step = 0
-        # save the 3 best models
-        best_metrics = [0, 0, 0]
+        # save the best model
+        best_metric = 0
         for epoch in range(num_epochs):
             for batch in dataloader:
                 current_step += 1
@@ -181,10 +181,9 @@ class ClipModel:
                     eval_metrics = self.eval(eval_ds)
                     print("Eval metrics: ", eval_metrics)
                     f1_score = eval_metrics["f1"]
-                    if f1_score > min(best_metrics):
-                        best_metrics.remove(min(best_metrics))
-                        best_metrics.append(f1_score)
-                        torch.save(self.model.state_dict(), os.path.join(save_path, "best_model_{}.pth".format(f1_score)))
+                    if f1_score > best_metric:
+                        best_metric = f1_score
+                        torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
                     #if f1_score > best_eval:
                         #torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
                     self.model.train()
