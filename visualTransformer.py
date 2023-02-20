@@ -44,8 +44,7 @@ def mean(l):
 class VisualTransformer():
 
     def __init__(self):
-        self.processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
-        self.model = ViTModel.from_pretrained("google/vit-base-patch16-224")
+        self.model = Model()
     
     def train(self, train_ds, val_ds, num_epochs= 3, lr = 5e-5,  warmup_steps = 0, batch_size = 8, num_eval_steps = 10, save_path = "./"):
 
@@ -54,7 +53,7 @@ class VisualTransformer():
         self.model.train()
         self.model.to(device)
         dataloader = torch.utils.data.DataLoader(
-            train_ds, batch_size=8, shuffle=True, collate_fn = collate_fn
+            train_ds, batch_size=batch_size, shuffle=True, collate_fn = collate_fn
         )
         optimizer = AdamW(self.model.parameters(), lr=lr)
         num_training_steps=len(dataloader) * num_epochs
@@ -90,7 +89,7 @@ class VisualTransformer():
                 
                 labels_tensor = torch.tensor(labels).to(device)
                 
-                outputs = self.model(**inputs, labels=labels_tensor)
+                outputs = self.model(**inputs, nums_images)
 
                 logits = outputs[0]
 
