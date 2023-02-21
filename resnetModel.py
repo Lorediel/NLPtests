@@ -23,8 +23,8 @@ class Model(nn.Module):
     def forward(self, pixel_values, nums_images):
         
         
-        i_embeddings = self.base_model(pixel_values).pooler_output
-
+        i_embeddings = self.base_model(pixel_values = pixel_values).pooler_output
+        i_embeddings = self.flatten(i_embeddings)
         #compute the max of the embeddings
         embeddings_images = []
         base = 0
@@ -36,8 +36,8 @@ class Model(nn.Module):
         
         embeddings_images = torch.cat(embeddings_images, dim=0)
        
-        embeddings = self.flatten(embeddings_images)
-        logits = self.linear(embeddings)
+        
+        logits = self.linear(embeddings_images)
         return logits
 
 
@@ -83,24 +83,24 @@ class ResnetModel():
                 nums_images = []
                 for m in mask:
                     nums_images.append(sum(m))
-                
+                """
                 new_l = []
                 for j in range(len(mask)):
                     for i in range(len(mask[j])):
                         if mask[j][i] == 1:
                             new_l.append(images_list[j][i])
                 images_list = new_l
-
                 """
                 images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
                           for item, mask_value in zip(sublist, mask_sublist) 
                           if mask_value]
-                """
+                
 
                 i_inputs = self.model.processor(images = images_list, return_tensors="pt")
 
                 for k, v in i_inputs.items():
                     i_inputs[k] = v.to(device)
+
                 labels = torch.tensor(labels).to(device)
 
                 nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
