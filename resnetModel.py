@@ -100,7 +100,7 @@ class ResnetModel():
                 )
 
                 logits = outputs
-                preds = torch.argmax(logits, dim=1)
+                preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
                 loss = criterion(logits, labels)
 
                 metrics = compute_metrics(preds, batch["label"])
