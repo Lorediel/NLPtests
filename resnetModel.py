@@ -50,6 +50,7 @@ class ResnetModel():
     
     def train(self, train_ds, eval_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./"):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.model.train()
         self.model.to(device)
 
         dataloader = torch.utils.data.DataLoader(
@@ -58,7 +59,7 @@ class ResnetModel():
 
         criterion = nn.CrossEntropyLoss()
         
-        self.model.train()
+        
         # Initialize the optimizer
         optimizer = AdamW(self.model.parameters(), lr=lr)
         num_training_steps=len(dataloader) * num_epochs
@@ -75,7 +76,7 @@ class ResnetModel():
         best_metric = 0
         for epoch in range(num_epochs):
             for batch in dataloader:
-                current_step += 1
+                #current_step += 1
                 images_list = batch["images"]
                 mask = batch["images_mask"]
                 labels = batch["label"]
@@ -103,7 +104,7 @@ class ResnetModel():
 
                 labels = torch.tensor(labels).to(device)
 
-                nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
+                
                 outputs = self.model(
                     pixel_values=i_inputs.pixel_values,
                     nums_images = nums_images,
