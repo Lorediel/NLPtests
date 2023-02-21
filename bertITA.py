@@ -10,6 +10,21 @@ class BertModel():
         self.tokenizer = AutoTokenizer.from_pretrained(self.checkpoint)
         self.model = BertForSequenceClassification.from_pretrained(self.checkpoint, num_labels = 4)
 
+    
+
+    def tokenize_function(self, ds):
+        return self.tokenizer(ds['text'], truncation=True)
+
+    def process_ds(self, dataset):
+        # Tokenize the datasets
+        tokenized_ds = dataset.map(self.tokenize_function, batched=True)
+
+        # Rename the columns
+        tokenized_ds = tokenized_ds.rename_column("Label", "labels")
+        tokenized_ds.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
+        self.tokenized_ds = tokenized_ds
+        return tokenized_ds
+
     def collate_fn_bert(self, batch):
         
         texts = [item["text"] for item in batch]
@@ -19,6 +34,8 @@ class BertModel():
     
     def train(self, train_dataset, eval_dataset, num_epochs = 3, lr = 5e-5, scheduler_type = "linear", warmup_steps = 0, batch_size = 8, logging_steps = 10):
 
+        train_dataset = self.process_ds(train_dataset)
+        eval_dataset = self.process_ds(eval_dataset)
         
 
         training_args = TrainingArguments("test-trainer",

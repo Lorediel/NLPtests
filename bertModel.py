@@ -43,43 +43,6 @@ class BertModel:
                     num_warmup_steps=warmup_steps,
                     num_training_steps=num_training_steps
                 )
-            elif scheduler_type == "cosine":
-                scheduler = get_scheduler(
-                    name=scheduler_type,
-                    optimizer=optimizer,
-                    num_warmup_steps=warmup_steps,
-                    num_training_steps=num_training_steps
-                )
-            elif scheduler_type == "cosine_with_restarts":
-                scheduler = get_scheduler(
-                    name=scheduler_type,
-                    optimizer=optimizer,
-                    num_warmup_steps=warmup_steps,
-                    num_training_steps=num_training_steps,
-                    num_cycles=0.5
-                )
-            elif scheduler_type == "polynomial":
-                scheduler = get_scheduler(
-                    name=scheduler_type,
-                    optimizer=optimizer,
-                    num_warmup_steps=warmup_steps,
-                    num_training_steps=num_training_steps,
-                    power=1.0
-                )
-            elif scheduler_type == "constant":
-                scheduler = get_scheduler(
-                    name=scheduler_type,
-                    optimizer=optimizer,
-                    num_warmup_steps=warmup_steps,
-                    num_training_steps=num_training_steps
-                )
-            elif scheduler_type == "constant_with_warmup":
-                scheduler = get_scheduler(
-                    name=scheduler_type,
-                    optimizer=optimizer,
-                    num_warmup_steps=warmup_steps,
-                    num_training_steps=num_training_steps
-                )
             else:
                 raise ValueError("Invalid scheduler type")
             
