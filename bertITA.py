@@ -1,12 +1,12 @@
 import torch
 from transformers import AutoTokenizer, BertForSequenceClassification, AdamW, get_scheduler, TrainingArguments, Trainer
 from torch.utils.data import DataLoader
-from utils import *
+from NLPtests.utils import *
 
 class BertModel():
 
     checkpoint = "dbmdz/bert-base-italian-xxl-cased"
-    def __init__(self, num_labels, max_length):
+    def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained(self.checkpoint)
         self.model = BertForSequenceClassification.from_pretrained(self.checkpoint, num_labels = 4)
 
