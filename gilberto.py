@@ -13,7 +13,7 @@ class GilbertoModel():
     
 
     def tokenize_function(self, ds):
-        return self.tokenizer(ds['Text'], truncation=True)
+        return self.tokenizer(ds['Text'], truncation=True, max_length = 512)
     
     def process_ds(self, datasets):
         # Tokenize the datasets
