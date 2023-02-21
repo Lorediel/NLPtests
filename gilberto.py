@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from NLPtests.utils import compute_metrics as cm
 import numpy as np
 
-class BertModel():
+class GilbertoModel():
 
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained("idb-ita/gilberto-uncased-from-camembert", do_lower_case=True)
