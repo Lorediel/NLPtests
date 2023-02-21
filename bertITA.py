@@ -53,3 +53,7 @@ class BertModel():
         trainer.train()
 
     
+def compute_metrics(eval_preds):
+    logits, labels = eval_preds
+    predictions = np.argmax(logits, axis=-1)
+    return cm(predictions, labels)

@@ -31,25 +31,8 @@ class BertModel:
 
     def train(self, num_epochs = 3, lr = 5e-5, scheduler_type = "linear", warmup_steps = 0, batch_size = 8, eval_every_step = False):
             train_dataloader, eval_dataloader = build_dataloaders(self.tokenized_ds, self.data_collator)
+           
             
-            # Initialize the optimizer
-            optimizer = AdamW(self.model.parameters(), lr=lr)
-            num_training_steps=len(train_dataloader) * num_epochs
-            # Initialize the scheduler
-            if scheduler_type == "linear":
-                scheduler = get_scheduler(
-                    name=scheduler_type,
-                    optimizer=optimizer,
-                    num_warmup_steps=warmup_steps,
-                    num_training_steps=num_training_steps
-                )
-            else:
-                raise ValueError("Invalid scheduler type")
-            
-
-            # Start the training loop
-
-            device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
             training_args = TrainingArguments("test-trainer", evaluation_strategy="steps", logging_steps=10)
             trainer = Trainer(
