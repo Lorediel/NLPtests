@@ -66,7 +66,3 @@ def compute_metrics(preds, ground_truth):
         "recall": compute_recall(preds, ground_truth),
         "f1": compute_f1(preds, ground_truth),
     }
-
-if __name__ == "__main__":
-    d = splitTrainTestVal("./MULTI-Fake-Detective_Task1_Data.tsv")
-    print(d['train'].set_format("torch", columns=["input_ids", "attention_mask", "labels"]))
