@@ -23,7 +23,7 @@ class Model(nn.Module):
     def forward(self, pixel_values, nums_images):
         
         
-        i_embeddings = self.base_model(pixel_values = pixel_values)
+        i_embeddings = self.base_model(pixel_values = pixel_values).pooler_output
 
         #compute the max of the embeddings
         embeddings_images = []
@@ -35,13 +35,13 @@ class Model(nn.Module):
             base += nums_images[i]
         
         embeddings_images = torch.cat(embeddings_images, dim=0)
+       
         embeddings = self.flatten(embeddings_images)
         logits = self.linear(embeddings)
-        probs = self.softmax(logits)
-        return logits, probs
+        return logits
 
 
-class ResNetModel():
+class ResnetModel():
     def __init__(self):
         self.model = Model()
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -99,8 +99,8 @@ class ResNetModel():
                     nums_images = nums_images,
                 )
 
-                logits = outputs[0]
-                preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
+                logits = outputs
+                preds = torch.argmax(logits, dim=1)
                 loss = criterion(logits, labels)
 
                 metrics = compute_metrics(preds, batch["label"])
