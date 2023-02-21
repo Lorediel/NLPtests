@@ -1,7 +1,7 @@
 import torch
 from transformers import AutoTokenizer, BertForSequenceClassification, AdamW, get_scheduler, TrainingArguments, Trainer, DataCollatorWithPadding
 from torch.utils.data import DataLoader
-from NLPtests.utils import *
+from NLPtests.utils import compute_metrics as cm
 
 class BertModel():
 
