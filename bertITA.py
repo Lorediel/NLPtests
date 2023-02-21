@@ -15,6 +15,15 @@ class BertModel():
     def tokenize_function(self, ds):
         return self.tokenizer(ds['text'], truncation=True)
 
+    def process_ds(self, datasets):
+        # Tokenize the datasets
+        tokenized_ds = datasets.map(self.tokenize_function, batched=True)
+
+        # Rename the columns
+        tokenized_ds = tokenized_ds.rename_column("Label", "labels")
+        tokenized_ds.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
+        self.tokenized_ds = tokenized_ds
+        return tokenized_ds
 
 
     def collate_fn_bert(self, batch):
