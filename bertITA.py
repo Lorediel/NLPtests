@@ -22,14 +22,12 @@ class BertModel():
         # Rename the columns
         tokenized_ds = tokenized_ds.rename_column("Label", "labels")
         tokenized_ds.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
-        self.tokenized_ds = tokenized_ds
+        #self.tokenized_ds = tokenized_ds
         return tokenized_ds
 
 
     def train(self, dataset, num_epochs = 3, lr = 5e-5, scheduler_type = "linear", warmup_steps = 0, batch_size = 8, logging_steps = 10):
 
-        dataset = self.process_ds(dataset)
-        train_dataset, eval_dataset = splitDataset(dataset)
 
 
         training_args = TrainingArguments("test-trainer",
@@ -46,8 +44,8 @@ class BertModel():
         trainer = Trainer(
             model=self.model,
             args=training_args,
-            train_dataset = train_dataset,
-            eval_dataset= eval_dataset,
+            train_dataset = dataset['train'],
+            eval_dataset= dataset['valid'],
             data_collator=self.data_collator,
             compute_metrics=compute_metrics
         )
