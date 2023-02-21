@@ -2,6 +2,4 @@ transformers>=4.26.1
 datasets>=2.9.0
 torchvision>=0.14.1
 tqdm>=4.64.1
-logger>=1.4
-ekphrasis>=0.5.4
-pytorch-transformers>=1.2.0
+sentencepiece>=0.1.97
