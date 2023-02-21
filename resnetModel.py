@@ -106,12 +106,12 @@ class ResnetModel():
 
                 
                 outputs = self.model(
-                    pixel_values=i_inputs.pixel_values,
+                    pixel_values=i_inputs["pixel_values"],
                     nums_images = nums_images,
                 )
 
                 logits = outputs
-                preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
+                preds = logits.argmax(dim=-1).tolist()
                 loss = criterion(logits, labels)
 
                 metrics = compute_metrics(preds, batch["label"])
