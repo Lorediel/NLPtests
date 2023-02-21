@@ -13,8 +13,8 @@ class BertModel():
     
 
     def tokenize_function(self, ds):
-        return self.tokenizer(ds['text'], truncation=True)
-
+        return self.tokenizer(ds['Text'], truncation=True)
+    
     def process_ds(self, datasets):
         # Tokenize the datasets
         tokenized_ds = datasets.map(self.tokenize_function, batched=True)
@@ -26,13 +26,6 @@ class BertModel():
         return tokenized_ds
 
 
-    def collate_fn_bert(self, batch):
-        
-        texts = [item["text"] for item in batch]
-        labels = [item["label"] for item in batch]
-        encodings = self.tokenizer(texts, truncation=True, padding=True)
-        return {'input_ids': torch.tensor(encodings['input_ids']), 'attention_mask': torch.tensor(encodings['attention_mask']), 'labels': torch.tensor(labels)}
-    
     def train(self, dataset, num_epochs = 3, lr = 5e-5, scheduler_type = "linear", warmup_steps = 0, batch_size = 8, logging_steps = 10):
 
         dataset = self.process_ds(dataset)
@@ -49,6 +42,7 @@ class BertModel():
           num_train_epochs=num_epochs,
           learning_rate=lr,
           )
+        
         trainer = Trainer(
             model=self.model,
             args=training_args,

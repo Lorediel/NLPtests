@@ -21,7 +21,7 @@ def splitDataset(dataset):
     return train_dataset, validation_dataset
 
 
-def splitTrainTestVal(dataset, filepath, delete_date = False):
+def splitTrainTestVal(filepath, delete_date = False):
     data_files = {"train": filepath}
     dataset_dict = load_dataset("csv", data_files=filepath, delimiter="\t")
     if (delete_date):
