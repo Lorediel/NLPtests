@@ -12,8 +12,8 @@ class BertModel():
 
     def collate_fn_bert(self, batch):
         
-        texts = [item["Text"] for item in batch]
-        labels = [item["Label"] for item in batch]
+        texts = [item["text"] for item in batch]
+        labels = [item["label"] for item in batch]
         encodings = self.tokenizer(texts, truncation=True, padding=True)
         return {'input_ids': torch.tensor(encodings['input_ids']), 'attention_mask': torch.tensor(encodings['attention_mask']), 'labels': torch.tensor(labels)}
     
