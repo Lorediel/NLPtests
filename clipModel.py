@@ -184,8 +184,6 @@ class ClipModel:
                     if f1_score > best_metric:
                         best_metric = f1_score
                         torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
-                    #if f1_score > best_eval:
-                        #torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
                     self.model.train()
                 
 
