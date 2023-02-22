@@ -83,9 +83,11 @@ def collate_fn(batch):
 
 if __name__ == "__main__":
     ds = FakeNewsDataset("/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv", "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
+    
     dataloader = DataLoader(
-        ds, batch_size=2, shuffle=True, collate_fn = collate_fn
+        ds, batch_size=8, shuffle=True, collate_fn = collate_fn
     )
     for batch in dataloader:
         print(batch)
         break
+    
