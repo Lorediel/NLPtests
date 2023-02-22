@@ -4,7 +4,7 @@ import torch.nn as nn
 from transformers import ResNetModel, BertModel, AutoTokenizer, AutoImageProcessor, AdamW, get_scheduler
 from tqdm.auto import tqdm
 from NLPtests.utils import compute_metrics
-from FakeNewsDataset import collate_fn
+from NLPtests.FakeNewsDataset import collate_fn
 import os
 
 class Model(nn.Module):
