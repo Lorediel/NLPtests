@@ -14,10 +14,10 @@ class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
         
-        self.base_model = ResNetModel.from_pretrained("microsoft/resnet-50")
-        self.processor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
+        self.base_model = ResNetModel.from_pretrained("microsoft/resnet-18")
+        self.processor = AutoImageProcessor.from_pretrained("microsoft/resnet-18")
         self.flatten = nn.Flatten(1,-1)
-        self.linear = nn.Linear(2048, 4)
+        self.linear = nn.Linear(512, 4)
         self.softmax = nn.Softmax(dim=1)
         
 
