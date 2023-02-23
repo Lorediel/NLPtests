@@ -61,8 +61,8 @@ def compute_accuracy(preds, ground_truth):
 
 def compute_metrics(preds, ground_truth):
     return {
-        "accuracy": compute_accuracy(preds, ground_truth),
-        "precision": compute_precision(preds, ground_truth),
-        "recall": compute_recall(preds, ground_truth),
-        "f1": compute_f1(preds, ground_truth),
+        "accuracy": round(compute_accuracy(preds, ground_truth),3),
+        "precision": round(compute_precision(preds, ground_truth),3),
+        "recall": round(compute_recall(preds, ground_truth),3),
+        "f1": round(compute_f1(preds, ground_truth),3),
     }
