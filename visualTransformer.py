@@ -14,7 +14,10 @@ class Model(nn.Module):
         
         self.base_model = ViTModel.from_pretrained("google/vit-base-patch16-224")
         self.processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
-        self.linear = nn.Linear(768, 4) 
+        self.relu = nn.ReLU()
+        self.linear1 = nn.Linear(768, 512)
+        self.linear2 = nn.Linear(512, 512)
+        self.linear3 = nn.Linear(512, 4)
         self.softmax = nn.Softmax(dim=1)
         
 
@@ -34,7 +37,12 @@ class Model(nn.Module):
         
         embeddings_images = torch.cat(embeddings_images, dim=0)
 
-        logits = self.linear(embeddings_images)
+        embeddings = self.linear1(embeddings_images)
+        embeddings = self.relu(embeddings)
+        embeddings = self.linear2(embeddings)
+        embeddings = self.relu(embeddings)
+        logits = self.linear3(embeddings)
+        
         probs = self.softmax(logits)
         return logits, probs
 
@@ -97,6 +105,7 @@ class VisualTransformer():
         progress_bar = tqdm(range(num_training_steps))
         current_step = 0
         criterion = nn.CrossEntropyLoss()
+        best_metric = 0
         for epoch in range(num_epochs):
             for batch in dataloader:
                 #current_step += 1
@@ -119,7 +128,7 @@ class VisualTransformer():
                 loss = criterion(logits, labels_tensor)
 
 
-                best_metric = 0
+                
 
                 
                 if (current_step % num_eval_steps == 0):

@@ -37,7 +37,10 @@ for index, row in df.iterrows():
     num_images = len(urls)
     label = row['Label']
     total_nums_of_images_for_fakes[label] += num_images
-    fakes_for_label[label] += 1
+    if num_images > 1:
+        fakes_for_label[label] += 1
+
+
     if date not in date_labels:
         date_labels[date] = {
             0: 0,
@@ -56,11 +59,11 @@ x = list(total_nums_of_images_for_fakes.keys())
 y = list(total_nums_of_images_for_fakes.values())
 """
 # Total number of rows that have more than one image
-"""
+
 x = list(fakes_for_label.keys())
 y = list(fakes_for_label.values())
-"""
 
+"""
 # bar plot of dates and label 0
 od = collections.OrderedDict(sorted(date_labels.items()))
 x = list(od.keys())
@@ -69,8 +72,9 @@ for i in range(4):
     y_l = [item[i] for item in y]
     plt.bar(x, y_l)
     plt.show()
-#plt.xticks(x, labels.values())
+"""
+plt.xticks(x, labels.values())
 # change colors
-#plt.bar(x, y, color=['#BB4343', '#FE5E41', '#F1EC88', '#05BF8A'])
-#print(fakes_for_label)
-#plt.show()
+plt.bar(x, y, color=['#BB4343', '#FE5E41', '#F1EC88', '#05BF8A'])
+
+plt.show()

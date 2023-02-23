@@ -17,7 +17,10 @@ class Model(nn.Module):
         self.base_model = ResNetModel.from_pretrained("microsoft/resnet-18")
         self.processor = AutoImageProcessor.from_pretrained("microsoft/resnet-18")
         self.flatten = nn.Flatten(1,-1)
-        self.linear = nn.Linear(512, 4)
+        self.relu = nn.ReLU()
+        self.linear1 = nn.Linear(512, 256)
+        self.linear2 = nn.Linear(256, 256)
+        self.linear3 = nn.Linear(256, 4)
         self.softmax = nn.Softmax(dim=1)
         
 
@@ -38,7 +41,12 @@ class Model(nn.Module):
         embeddings_images = torch.cat(embeddings_images, dim=0)
        
         
-        logits = self.linear(embeddings_images)
+        embeddings = self.linear1(embeddings_images)
+        embeddings = self.relu(embeddings)
+        embeddings = self.linear2(embeddings)
+        embeddings = self.relu(embeddings)
+        logits = self.linear3(embeddings)
+        
         probs = self.softmax(logits)
         return logits, probs
 
@@ -132,7 +140,7 @@ class ResnetModel():
                 logits = outputs[0]
                 loss = criterion(logits, labels)
 
-                best_metric = 0
+                
                 if (current_step % num_eval_steps == 0):
                     print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
                     eval_metrics = self.eval(val_ds)

@@ -15,7 +15,10 @@ class Model(nn.Module):
         self.tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
         self.processor = AutoImageProcessor.from_pretrained("microsoft/resnet-18")
         self.flatten = nn.Flatten(1,-1)
-        self.linear = nn.Linear(768 + 512, 4)
+        self.linear1 = nn.Linear(768 + 512, 512)
+        self.linear2 = nn.Linear(512, 512)
+        self.linear3 = nn.Linear(512, 4)
+        self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, input_ids, attention_mask, pixel_values, nums_images):
@@ -39,7 +42,12 @@ class Model(nn.Module):
 
         concatenated_tensor = torch.cat((embeddings_images, embeddings_text), dim=1)
 
-        logits = self.linear(concatenated_tensor)
+        embeddings = self.linear1(concatenated_tensor)
+        embeddings = self.relu(embeddings)
+        embeddings = self.linear2(embeddings)
+        embeddings = self.relu(embeddings)
+        logits = self.linear3(embeddings)
+        
         probs = self.softmax(logits)
         return logits, probs
 
