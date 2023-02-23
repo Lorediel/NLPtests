@@ -14,7 +14,10 @@ class Model(nn.Module):
         
         self.base_model = ViTModel.from_pretrained("google/vit-base-patch16-224")
         self.processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
-        self.linear = nn.Linear(768, 4) 
+        self.relu = nn.ReLU()
+        self.linear1 = nn.Linear(768, 512)
+        self.linear2 = nn.Linear(512, 512)
+        self.linear3 = nn.Linear(512, 4)
         self.softmax = nn.Softmax(dim=1)
         
 
@@ -34,7 +37,12 @@ class Model(nn.Module):
         
         embeddings_images = torch.cat(embeddings_images, dim=0)
 
-        logits = self.linear(embeddings_images)
+        embeddings = self.linear1(embeddings_images)
+        embeddings = self.relu(embeddings)
+        embeddings = self.linear2(embeddings)
+        embeddings = self.relu(embeddings)
+        logits = self.linear3(embeddings)
+        
         probs = self.softmax(logits)
         return logits, probs
 
@@ -59,16 +67,10 @@ class VisualTransformer():
         with torch.no_grad():
             for batch in dataloader:
                 images_list = batch["images"]
-                mask = batch["images_mask"]
                 labels = batch["label"]
-
-                nums_images = []
-                for m in mask:
-                    nums_images.append(sum(m))
-                images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
-                          for item, mask_value in zip(sublist, mask_sublist) 
-                          if mask_value]
+                nums_images = batch["nums_images"]
                 
+
                 inputs = self.model.processor(images = images_list, return_tensors="pt")
                 for k, v in inputs.items():
                     inputs[k] = v.to(device)
@@ -103,22 +105,16 @@ class VisualTransformer():
         progress_bar = tqdm(range(num_training_steps))
         current_step = 0
         criterion = nn.CrossEntropyLoss()
+        best_metric = 0
         for epoch in range(num_epochs):
             for batch in dataloader:
                 #current_step += 1
                 #batch = {k: v.to(device) for k, v in batch.items()}
                
                 images_list = batch["images"]
-                mask = batch["images_mask"]
                 labels = batch["label"]
+                nums_images = batch["nums_images"]
 
-                nums_images = []
-                for m in mask:
-                    nums_images.append(sum(m))
-                images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
-                          for item, mask_value in zip(sublist, mask_sublist) 
-                          if mask_value]
-                
                 inputs = self.model.processor(images = images_list, return_tensors="pt")
                 for k, v in inputs.items():
                     inputs[k] = v.to(device)
@@ -132,7 +128,7 @@ class VisualTransformer():
                 loss = criterion(logits, labels_tensor)
 
 
-                best_metric = 0
+                
 
                 
                 if (current_step % num_eval_steps == 0):
@@ -142,6 +138,7 @@ class VisualTransformer():
                     print("Eval metrics: ", eval_metrics)
                     f1_score = eval_metrics["f1"]
                     if f1_score > best_metric:
+                        print("New best model found")
                         best_metric = f1_score
                         torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
                     self.model.train()

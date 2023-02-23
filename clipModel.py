@@ -19,7 +19,10 @@ class Model(nn.Module):
         self.processor = AutoProcessor.from_pretrained("clip-italian/clip-italian")
         self.tokenizer = AutoTokenizer.from_pretrained("clip-italian/clip-italian")
         self.feature_extractor = AutoFeatureExtractor.from_pretrained("openai/clip-vit-base-patch32")
-        self.linear = nn.Linear(512*2, 4) 
+        self.linear1 = nn.Linear(512, 256)
+        self.linear2 = nn.Linear(256, 256)
+        self.linear3 = nn.Linear(256, 4)
+        self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, input_ids, attention_mask, pixel_values, nums_images):
@@ -41,7 +44,11 @@ class Model(nn.Module):
         
         embeddings_images = torch.cat(embeddings_images, dim=0)
         embeddings = torch.cat((t_embeddings, embeddings_images), dim=1)
-        logits = self.linear(embeddings)
+        embeddings = self.linear1(embeddings)
+        embeddings = self.relu(embeddings)
+        embeddings = self.linear2(embeddings)
+        embeddings = self.relu(embeddings)
+        logits = self.linear3(embeddings)
         probs = self.softmax(logits)
         return logits, probs
 
@@ -75,16 +82,10 @@ class ClipModel:
             for batch in dataloader:
                 texts = batch["text"]
                 images_list = batch["images"]
-                mask = batch["images_mask"]
                 labels = batch["label"]
-
-                nums_images = []
-                for m in mask:
-                    nums_images.append(sum(m))
-                images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
-                          for item, mask_value in zip(sublist, mask_sublist) 
-                          if mask_value]
+                nums_images = batch["nums_images"]
                 
+
                 t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True, truncation=True)
                 i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
                 
@@ -141,16 +142,8 @@ class ClipModel:
                 #batch = {k: v.to(device) for k, v in batch.items()}
                 texts = batch["text"]
                 images_list = batch["images"]
-                mask = batch["images_mask"]
                 labels = batch["label"]
-
-                nums_images = []
-                for m in mask:
-                    nums_images.append(sum(m))
-                images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
-                          for item, mask_value in zip(sublist, mask_sublist) 
-                          if mask_value]
-
+                nums_images = batch["nums_images"]
 
 
                 
@@ -182,6 +175,7 @@ class ClipModel:
                     print("Eval metrics: ", eval_metrics)
                     f1_score = eval_metrics["f1"]
                     if f1_score > best_metric:
+                        print("New best model found")
                         best_metric = f1_score
                         torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
                     self.model.train()

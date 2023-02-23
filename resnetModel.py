@@ -17,7 +17,10 @@ class Model(nn.Module):
         self.base_model = ResNetModel.from_pretrained("microsoft/resnet-18")
         self.processor = AutoImageProcessor.from_pretrained("microsoft/resnet-18")
         self.flatten = nn.Flatten(1,-1)
-        self.linear = nn.Linear(512, 4)
+        self.relu = nn.ReLU()
+        self.linear1 = nn.Linear(512, 256)
+        self.linear2 = nn.Linear(256, 256)
+        self.linear3 = nn.Linear(256, 4)
         self.softmax = nn.Softmax(dim=1)
         
 
@@ -38,7 +41,12 @@ class Model(nn.Module):
         embeddings_images = torch.cat(embeddings_images, dim=0)
        
         
-        logits = self.linear(embeddings_images)
+        embeddings = self.linear1(embeddings_images)
+        embeddings = self.relu(embeddings)
+        embeddings = self.linear2(embeddings)
+        embeddings = self.relu(embeddings)
+        logits = self.linear3(embeddings)
+        
         probs = self.softmax(logits)
         return logits, probs
 
@@ -62,16 +70,9 @@ class ResnetModel():
         with torch.no_grad():
             for batch in dataloader:
                 images_list = batch["images"]
-                mask = batch["images_mask"]
                 labels = batch["label"]
-
-                nums_images = []
-                for m in mask:
-                    nums_images.append(sum(m))
-
-                images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
-                          for item, mask_value in zip(sublist, mask_sublist) 
-                          if mask_value]
+                nums_images = batch["nums_images"]
+                
                 
                 inputs = self.model.processor(images = images_list, return_tensors="pt")
                 for k, v in inputs.items():
@@ -118,24 +119,10 @@ class ResnetModel():
             for batch in dataloader:
                 
                 images_list = batch["images"]
-                mask = batch["images_mask"]
+                nums_images = batch["nums_images"]
                 labels = batch["label"]
 
-                nums_images = []
-                for m in mask:
-                    nums_images.append(sum(m))
-                """
-                new_l = []
-                for j in range(len(mask)):
-                    for i in range(len(mask[j])):
-                        if mask[j][i] == 1:
-                            new_l.append(images_list[j][i])
-                images_list = new_l
-                """
-                images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
-                          for item, mask_value in zip(sublist, mask_sublist) 
-                          if mask_value]
-                
+
 
                 i_inputs = self.model.processor(images = images_list, return_tensors="pt")
 
@@ -153,13 +140,14 @@ class ResnetModel():
                 logits = outputs[0]
                 loss = criterion(logits, labels)
 
-                best_metric = 0
+                
                 if (current_step % num_eval_steps == 0):
                     print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
                     eval_metrics = self.eval(val_ds)
                     print("Eval metrics: ", eval_metrics)
                     f1_score = eval_metrics["f1"]
                     if f1_score > best_metric:
+                        print("New best model found")
                         best_metric = f1_score
                         torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
                     self.model.train()

@@ -15,7 +15,10 @@ class Model(nn.Module):
         self.tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
         self.processor = AutoImageProcessor.from_pretrained("microsoft/resnet-18")
         self.flatten = nn.Flatten(1,-1)
-        self.linear = nn.Linear(768 + 512, 4)
+        self.linear1 = nn.Linear(768 + 512, 512)
+        self.linear2 = nn.Linear(512, 512)
+        self.linear3 = nn.Linear(512, 4)
+        self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, input_ids, attention_mask, pixel_values, nums_images):
@@ -39,7 +42,12 @@ class Model(nn.Module):
 
         concatenated_tensor = torch.cat((embeddings_images, embeddings_text), dim=1)
 
-        logits = self.linear(concatenated_tensor)
+        embeddings = self.linear1(concatenated_tensor)
+        embeddings = self.relu(embeddings)
+        embeddings = self.linear2(embeddings)
+        embeddings = self.relu(embeddings)
+        logits = self.linear3(embeddings)
+        
         probs = self.softmax(logits)
         return logits, probs
 
@@ -64,17 +72,10 @@ class BertResnetConcatModel():
             for batch in dataloader:
                 texts = batch["text"]
                 images_list = batch["images"]
-                mask = batch["images_mask"]
                 labels = batch["label"]
 
-                nums_images = []
-                for m in mask:
-                    nums_images.append(sum(m))
-                images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
-                          for item, mask_value in zip(sublist, mask_sublist) 
-                          if mask_value]
-                
-                
+                nums_images = batch["nums_images"]
+
                 
                 t_inputs = self.model.tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
                 i_inputs = self.model.processor(images_list, return_tensors="pt", padding=True)
@@ -127,15 +128,9 @@ class BertResnetConcatModel():
             for batch in dataloader:
                 texts = batch["text"]
                 images_list = batch["images"]
-                mask = batch["images_mask"]
                 labels = batch["label"]
 
-                nums_images = []
-                for m in mask:
-                    nums_images.append(sum(m))
-                images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
-                          for item, mask_value in zip(sublist, mask_sublist) 
-                          if mask_value]
+                nums_images = batch["nums_images"]
 
                 t_inputs = self.model.tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
                 i_inputs = self.model.processor(images_list, return_tensors="pt", padding=True)
