@@ -45,6 +45,7 @@ def collate_fn(batch):
     labels = []
     images = []
     nums_images = []
+
     for sample in batch:
         images_list = sample["images"]
         num_images = len(images_list)
@@ -53,7 +54,8 @@ def collate_fn(batch):
         types.append(sample["type"])
         texts.append(sample["text"])
         labels.append(sample["label"])
-        images.append(images_list)
+        for img in images_list:
+            images.append(img)
     """
     nums = []
     for sample in batch:
@@ -74,6 +76,13 @@ def collate_fn(batch):
     return {"id": ids, "type": types, "text": texts, "label": labels, "nums_images": nums_images, "images": images}
 
 
-
+if __name__ == "__main__":
+    ds = FakeNewsDataset("/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv", "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
     
+    dataloader = DataLoader(
+        ds, batch_size=8, shuffle=True, collate_fn = collate_fn
+    )
+    for batch in dataloader:
+        print(batch["images"])
+        break
     

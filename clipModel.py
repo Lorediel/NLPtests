@@ -78,6 +78,7 @@ class ClipModel:
                 labels = batch["label"]
                 nums_images = batch["nums_images"]
                 
+                
                 t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True, truncation=True)
                 i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
                 
