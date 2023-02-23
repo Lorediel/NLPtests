@@ -59,16 +59,10 @@ class VisualTransformer():
         with torch.no_grad():
             for batch in dataloader:
                 images_list = batch["images"]
-                mask = batch["images_mask"]
                 labels = batch["label"]
+                nums_images = batch["nums_images"]
 
-                nums_images = []
-                for m in mask:
-                    nums_images.append(sum(m))
-                images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
-                          for item, mask_value in zip(sublist, mask_sublist) 
-                          if mask_value]
-                
+
                 inputs = self.model.processor(images = images_list, return_tensors="pt")
                 for k, v in inputs.items():
                     inputs[k] = v.to(device)
@@ -109,16 +103,9 @@ class VisualTransformer():
                 #batch = {k: v.to(device) for k, v in batch.items()}
                
                 images_list = batch["images"]
-                mask = batch["images_mask"]
                 labels = batch["label"]
+                nums_images = batch["nums_images"]
 
-                nums_images = []
-                for m in mask:
-                    nums_images.append(sum(m))
-                images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
-                          for item, mask_value in zip(sublist, mask_sublist) 
-                          if mask_value]
-                
                 inputs = self.model.processor(images = images_list, return_tensors="pt")
                 for k, v in inputs.items():
                     inputs[k] = v.to(device)

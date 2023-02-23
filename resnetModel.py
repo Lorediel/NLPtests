@@ -62,16 +62,9 @@ class ResnetModel():
         with torch.no_grad():
             for batch in dataloader:
                 images_list = batch["images"]
-                mask = batch["images_mask"]
                 labels = batch["label"]
-
-                nums_images = []
-                for m in mask:
-                    nums_images.append(sum(m))
-
-                images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
-                          for item, mask_value in zip(sublist, mask_sublist) 
-                          if mask_value]
+                nums_images = batch["nums_images"]
+                
                 
                 inputs = self.model.processor(images = images_list, return_tensors="pt")
                 for k, v in inputs.items():
@@ -118,24 +111,8 @@ class ResnetModel():
             for batch in dataloader:
                 
                 images_list = batch["images"]
-                mask = batch["images_mask"]
+                nums_images = batch["nums_images"]
                 labels = batch["label"]
-
-                nums_images = []
-                for m in mask:
-                    nums_images.append(sum(m))
-                """
-                new_l = []
-                for j in range(len(mask)):
-                    for i in range(len(mask[j])):
-                        if mask[j][i] == 1:
-                            new_l.append(images_list[j][i])
-                images_list = new_l
-                """
-                images_list = [item.to(device) for sublist, mask_sublist in zip(images_list, mask)
-                          for item, mask_value in zip(sublist, mask_sublist) 
-                          if mask_value]
-                
 
                 i_inputs = self.model.processor(images = images_list, return_tensors="pt")
 
