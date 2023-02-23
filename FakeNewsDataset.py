@@ -19,7 +19,7 @@ class FakeNewsDataset(Dataset):
         self.data = pd.read_csv(tsv_file, sep='\t')
         self.img_dir = image_dir
         self.transform = transforms.Compose([
-            transforms.Resize((224, 224)),
+            transforms.Resize((336, 336)),
             transforms.ToTensor()
         ])
 
@@ -69,7 +69,7 @@ def collate_fn(batch):
         nums.append(num_images)
         #pad the images list with a tensor of zeros
         for i in range(num_images, max_images):
-            images_list.append(torch.zeros(3, 224, 224))
+            images_list.append(torch.zeros(3, 336, 336))
         
         images.append(images_list)
     mask = []
