@@ -3,7 +3,6 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import numpy as np
 from torch.utils.data import Dataset, Subset
-from FakeNewsDataset import FakeNewsDataset
 import pandas as pd
 
 
@@ -130,14 +129,6 @@ def get_train_val_indexes(indexes):
     validation_indexes = indexes[:split]
     return train_indexes, validation_indexes
 
-if __name__ == "__main__":
-    filepath = "/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv"
-    dataset = FakeNewsDataset(filepath , "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
-    train_dataset, validation_dataset = stratifiedSplit(dataset)
-    print(len(train_dataset))
-    print(len(validation_dataset))
-    print(len(train_dataset) + len(validation_dataset))
-    print(len(dataset))
-    
+
     
     
