@@ -61,7 +61,7 @@ class VisualTransformer():
                 images_list = batch["images"]
                 labels = batch["label"]
                 nums_images = batch["nums_images"]
-
+                
 
                 inputs = self.model.processor(images = images_list, return_tensors="pt")
                 for k, v in inputs.items():

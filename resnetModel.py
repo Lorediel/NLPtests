@@ -114,6 +114,8 @@ class ResnetModel():
                 nums_images = batch["nums_images"]
                 labels = batch["label"]
 
+
+
                 i_inputs = self.model.processor(images = images_list, return_tensors="pt")
 
                 for k, v in i_inputs.items():
