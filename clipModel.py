@@ -141,7 +141,6 @@ class ClipModel:
                 #batch = {k: v.to(device) for k, v in batch.items()}
                 texts = batch["text"]
                 images_list = batch["images"]
-                mask = batch["images_mask"]
                 labels = batch["label"]
                 nums_images = batch["nums_images"]
 
