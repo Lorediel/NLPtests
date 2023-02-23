@@ -4,6 +4,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import numpy as np
 from torch.utils.data import Dataset, Subset
 import pandas as pd
+from NLPtests.FakeNewsDataset import FakeNewsDataset
 
 
 
@@ -31,13 +32,36 @@ def splitTrainTestVal(filepath, delete_date = False):
         dataset_dict = dataset_dict.remove_columns(["Date"])
     dataset = dataset_dict["train"]
     dataset = dataset.shuffle(seed = 64)
-    # 90% train, 10% test + validation
     train_testvalid = dataset.train_test_split(test_size=0.2)
     # gather everyone if you want to have a single DatasetDict
     train_test_valid_dataset = DatasetDict({
     'train': train_testvalid['train'],
     'valid': train_testvalid['test']})
     return train_test_valid_dataset
+
+def splitTrainTestVal2(filepath, dataset, delete_date = False):
+    indexes = take_per_type_label_indexes(dataset)
+    train_indexes = []
+    validation_indexes = []
+    for k,v in indexes.items():
+        t_i, v_i = get_train_val_indexes(v)
+        train_indexes += t_i
+        validation_indexes += v_i
+    
+    data_files = {"train": filepath}
+    dataset_dict = load_dataset("csv", data_files=filepath, delimiter="\t")
+    if (delete_date):
+        dataset_dict = dataset_dict.remove_columns(["Date"])
+    dataset = dataset_dict["train"]
+    # split the dataset based on train_indexes and validation
+    train_ds = dataset.select(train_indexes)
+    validation_ds = dataset.select(validation_indexes)
+    # gather everyone if you want to have a single DatasetDict
+    train_test_valid_dataset = DatasetDict({
+    'train': train_ds,
+    'valid': validation_ds})
+    return train_test_valid_dataset
+
 
 
 def build_dataloaders(tokenized_ds, data_collator, batch_size = 8):
@@ -130,5 +154,17 @@ def get_train_val_indexes(indexes):
     return train_indexes, validation_indexes
 
 
+if __name__ == '__main__':
+    ds = FakeNewsDataset("/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv", "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
     
-    
+    train, val = stratifiedSplit(ds)
+    print(train[0])
+    print(val[0])
+    print(train[54])
+    print(val[54])
+
+    ds = splitTrainTestVal2("/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv", ds)
+    print(ds["train"][0])
+    print(ds["valid"][0])
+    print(ds["train"][54])
+    print(ds["valid"][54])
