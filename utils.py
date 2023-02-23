@@ -3,6 +3,10 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import numpy as np
 from torch.utils.data import Dataset, Subset
+from FakeNewsDataset import FakeNewsDataset
+import pandas as pd
+
+
 
 def splitDataset(dataset): 
     # 80% train, 20% validation
@@ -67,6 +71,73 @@ def compute_metrics(preds, ground_truth):
         "accuracy": round(compute_accuracy(preds, ground_truth),3),
         "precision": round(compute_precision(preds, ground_truth),3),
         "recall": round(compute_recall(preds, ground_truth),3),
-        "f1_macro": round(compute_f1(preds, ground_truth),3),
-        "f1_none": [round(n) for n in compute_f1_None(preds, ground_truth)],
+        "f1": round(compute_f1(preds, ground_truth),3),
+        "f1_none": [round(n, 3) for n in compute_f1_None(preds, ground_truth)],
     }
+
+
+def take_per_type_label_indexes(dataset):
+    indexes = {
+        "tweet_0": [],
+        "tweet_1": [],
+        "tweet_2": [],
+        "tweet_3": [],
+        "article_0": [],
+        "article_1": [],
+        "article_2": [],
+        "article_3": []
+    }
+    for i in range(len(dataset)):
+        x = dataset[i]
+        if (x["type"] == "tweet"):
+            if (x["label"] == 0):
+                indexes["tweet_0"].append(i)
+            elif (x["label"] == 1):
+                indexes["tweet_1"].append(i)
+            elif (x["label"] == 2):
+                indexes["tweet_2"].append(i)
+            elif (x["label"] == 3):
+                indexes["tweet_3"].append(i)
+        else:
+            if (x["label"] == 0):
+                indexes["article_0"].append(i)
+            elif (x["label"] == 1):
+                indexes["article_1"].append(i)
+            elif (x["label"] == 2):
+                indexes["article_2"].append(i)
+            elif (x["label"] == 3):
+                indexes["article_3"].append(i)
+    return indexes
+
+def stratifiedSplit(dataset):
+    indexes = take_per_type_label_indexes(dataset)
+    train_indexes = []
+    validation_indexes = []
+    for k,v in indexes.items():
+        t_i, v_i = get_train_val_indexes(v)
+        train_indexes += t_i
+        validation_indexes += v_i
+    train_dataset = Subset(dataset, train_indexes)
+    validation_dataset = Subset(dataset, validation_indexes)
+    return train_dataset, validation_dataset
+
+def get_train_val_indexes(indexes):
+    random_seed = 64
+    np.random.seed(random_seed)
+    np.random.shuffle(indexes)
+    split = int(np.ceil(0.2 * len(indexes)))
+    train_indexes = indexes[split:]
+    validation_indexes = indexes[:split]
+    return train_indexes, validation_indexes
+
+if __name__ == "__main__":
+    filepath = "/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv"
+    dataset = FakeNewsDataset(filepath , "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
+    train_dataset, validation_dataset = stratifiedSplit(dataset)
+    print(len(train_dataset))
+    print(len(validation_dataset))
+    print(len(train_dataset) + len(validation_dataset))
+    print(len(dataset))
+    
+    
+    

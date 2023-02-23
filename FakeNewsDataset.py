@@ -56,22 +56,7 @@ def collate_fn(batch):
         labels.append(sample["label"])
         for img in images_list:
             images.append(img)
-    """
-    nums = []
-    for sample in batch:
-        images_list = sample["images"]
-        num_images = len(images_list)
-        nums.append(num_images)
-        #pad the images list with a tensor of zeros
-        for i in range(num_images, max_images):
-            images_list.append(torch.zeros(3, 336, 336))
-        
-        images.append(images_list)
-    mask = []
-    for n in nums:
-        image_mask = [1] * n + [0] * (max_images - n)
-        mask.append(image_mask)
-    """
+   
     
     return {"id": ids, "type": types, "text": texts, "label": labels, "nums_images": nums_images, "images": images}
 

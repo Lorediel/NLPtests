@@ -19,9 +19,9 @@ class Model(nn.Module):
         self.processor = AutoProcessor.from_pretrained("clip-italian/clip-italian")
         self.tokenizer = AutoTokenizer.from_pretrained("clip-italian/clip-italian")
         self.feature_extractor = AutoFeatureExtractor.from_pretrained("openai/clip-vit-base-patch32")
-        self.linear1 = nn.Linear(512, 256)
-        self.linear2 = nn.Linear(256, 256)
-        self.linear3 = nn.Linear(256, 4)
+        self.linear1 = nn.Linear(512*2, 512)
+        self.linear2 = nn.Linear(512, 512)
+        self.linear3 = nn.Linear(512, 4)
         self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
 
@@ -44,6 +44,7 @@ class Model(nn.Module):
         
         embeddings_images = torch.cat(embeddings_images, dim=0)
         embeddings = torch.cat((t_embeddings, embeddings_images), dim=1)
+
         embeddings = self.linear1(embeddings)
         embeddings = self.relu(embeddings)
         embeddings = self.linear2(embeddings)
