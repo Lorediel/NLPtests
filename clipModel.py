@@ -19,6 +19,8 @@ class Model(nn.Module):
         self.processor = AutoProcessor.from_pretrained("clip-italian/clip-italian")
         self.tokenizer = AutoTokenizer.from_pretrained("clip-italian/clip-italian")
         self.feature_extractor = AutoFeatureExtractor.from_pretrained("openai/clip-vit-base-patch32")
+        
+        self.dropout2 = nn.Dropout(0.2)
         self.layernorm1 = nn.LayerNorm(512*2)
         self.linear1 = nn.Linear(512*2, 768)
         self.linear2 = nn.Linear(768, 4)
@@ -48,6 +50,7 @@ class Model(nn.Module):
         embeddings = torch.cat((t_embeddings, embeddings_images), dim=1)
 
         embeddings = self.layernorm1(embeddings)
+        embeddings = self.dropout2(embeddings)
         embeddings = self.relu(embeddings)
         embeddings = self.linear1(embeddings)
         embeddings = self.layernorm2(embeddings)
