@@ -141,6 +141,7 @@ class VisualTransformer():
                         print("New best model found")
                         best_metric = f1_score
                         torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
+                    print("Best metric: ", best_metric)
                     self.model.train()
                 
                 current_step += 1
