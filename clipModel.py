@@ -20,12 +20,13 @@ class Model(nn.Module):
         self.tokenizer = AutoTokenizer.from_pretrained("clip-italian/clip-italian")
         self.feature_extractor = AutoFeatureExtractor.from_pretrained("openai/clip-vit-base-patch32")
         
-        self.dropout2 = nn.Dropout(0.2)
-        self.layernorm1 = nn.LayerNorm(512*2)
+        #self.dropout2 = nn.Dropout(0.2)
+        #self.layernorm1 = nn.LayerNorm(512*2)
         self.linear1 = nn.Linear(512*2, 768)
-        self.linear2 = nn.Linear(768, 4)
+        self.linear2 = nn.Linear(768, 768)
+        self.linear3 = nn.Linear(768, 4)
         self.relu = nn.ReLU()
-        self.layernorm2 = nn.LayerNorm(768)
+        self.layernorm = nn.LayerNorm(768)
         self.dropout = nn.Dropout(0.1)
         self.softmax = nn.Softmax(dim=1)
 
@@ -49,14 +50,21 @@ class Model(nn.Module):
         embeddings_images = torch.cat(embeddings_images, dim=0)
         embeddings = torch.cat((t_embeddings, embeddings_images), dim=1)
 
-        embeddings = self.layernorm1(embeddings)
-        embeddings = self.dropout2(embeddings)
+        #embeddings = self.layernorm1(embeddings)
+        #embeddings = self.dropout2(embeddings)
         embeddings = self.relu(embeddings)
+
         embeddings = self.linear1(embeddings)
-        embeddings = self.layernorm2(embeddings)
+        embeddings = self.layernorm(embeddings)
         embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)
-        logits = self.linear2(embeddings)
+
+        embeddings = self.linear2(embeddings)
+        embeddings = self.layernorm(embeddings)
+        embeddings = self.dropout(embeddings)
+        embeddings = self.relu(embeddings)
+
+        logits = self.linear3(embeddings)
         probs = self.softmax(logits)
 
         return logits, probs
