@@ -26,7 +26,7 @@ class Model(nn.Module):
         self.linear2 = nn.Linear(512, 512)
 
         self.linear3 = nn.Linear(512, 4)
-        
+
         self.softmax = nn.Softmax(dim=1)
         
 
@@ -48,7 +48,7 @@ class Model(nn.Module):
        
         embeddings = self.relu(embeddings_images)
 
-        embeddings = self.linear1(embeddings_images)
+        embeddings = self.linear1(embeddings)
         embeddings = self.layernorm(embeddings)
         embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)
