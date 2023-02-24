@@ -15,6 +15,8 @@ class Model(nn.Module):
         self.base_model = ViTModel.from_pretrained("google/vit-base-patch16-224")
         self.processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
         self.relu = nn.ReLU()
+        self.layernorm = nn.LayerNorm(512)
+        self.dropout = nn.Dropout(0.1)
         self.linear1 = nn.Linear(768, 512)
         self.linear2 = nn.Linear(512, 512)
         self.linear3 = nn.Linear(512, 4)
@@ -37,10 +39,18 @@ class Model(nn.Module):
         
         embeddings_images = torch.cat(embeddings_images, dim=0)
 
-        embeddings = self.linear1(embeddings_images)
+        embeddings = self.relu(embeddings_images)
+
+        embeddings = self.linear1(embeddings)
         embeddings = self.relu(embeddings)
+        embeddings = self.layernorm(embeddings)
+        embeddings = self.dropout(embeddings)
+
         embeddings = self.linear2(embeddings)
+        embeddings = self.layernorm(embeddings)
+        embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)
+
         logits = self.linear3(embeddings)
         
         probs = self.softmax(logits)
