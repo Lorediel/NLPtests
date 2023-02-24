@@ -18,10 +18,15 @@ class Model(nn.Module):
         self.processor = AutoImageProcessor.from_pretrained("microsoft/resnet-18")
         self.flatten = nn.Flatten(1,-1)
         self.relu = nn.ReLU()
+
         self.linear1 = nn.Linear(512, 512)
         self.dropout = nn.Dropout(0.1)
         self.layernorm = nn.LayerNorm(512)
-        self.linear2 = nn.Linear(512, 4)
+
+        self.linear2 = nn.Linear(512, 512)
+
+        self.linear3 = nn.Linear(512, 4)
+        
         self.softmax = nn.Softmax(dim=1)
         
 
@@ -42,14 +47,17 @@ class Model(nn.Module):
         embeddings_images = torch.cat(embeddings_images, dim=0)
        
         embeddings = self.relu(embeddings_images)
+
         embeddings = self.linear1(embeddings_images)
         embeddings = self.layernorm(embeddings)
         embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)
+
         embeddings = self.linear2(embeddings)
         embeddings = self.layernorm(embeddings)
         embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)
+        
         logits = self.linear3(embeddings)
         
         probs = self.softmax(logits)
