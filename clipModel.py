@@ -23,7 +23,7 @@ class Model(nn.Module):
         #self.dropout2 = nn.Dropout(0.2)
         #self.layernorm1 = nn.LayerNorm(512*2)
         self.linear1 = nn.Linear(512*2, 768)
-        self.linear2 = nn.Linear(768, 768)
+        #self.linear2 = nn.Linear(768, 768)
         self.linear3 = nn.Linear(768, 4)
         self.relu = nn.ReLU()
         self.layernorm = nn.LayerNorm(768)
@@ -59,10 +59,10 @@ class Model(nn.Module):
         embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)
 
-        embeddings = self.linear2(embeddings)
-        embeddings = self.layernorm(embeddings)
-        embeddings = self.dropout(embeddings)
-        embeddings = self.relu(embeddings)
+        #embeddings = self.linear2(embeddings)
+        #embeddings = self.layernorm(embeddings)
+        #embeddings = self.dropout(embeddings)
+        #embeddings = self.relu(embeddings)
 
         logits = self.linear3(embeddings)
         probs = self.softmax(logits)
