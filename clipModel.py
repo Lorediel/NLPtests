@@ -18,6 +18,7 @@ class Model(nn.Module):
         self.base_model = VisionTextDualEncoderModel.from_pretrained("clip-italian/clip-italian")
         self.processor = AutoProcessor.from_pretrained("clip-italian/clip-italian")
         self.tokenizer = AutoTokenizer.from_pretrained("clip-italian/clip-italian")
+        self.tokenizerLast = AutoTokenizer.from_pretrained("clip-italian/clip-italian", padding_side = 'left', truncation_side = 'left')
         
         #self.dropout2 = nn.Dropout(0.2)
         #self.layernorm1 = nn.LayerNorm(512*2)
@@ -76,16 +77,28 @@ def pil_loader(path: str):
     with open(path, "rb") as f:
         im = Image.open(f)
         return im.convert("RGB")
+    
 
-        
+    
 class ClipModel:
+    #tokenizer_max_length = 512
+
+    
 
     def __init__(self):
         self.model = Model()
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(self.device)
 
-    def eval(self, ds, batch_size=8):
+    def get_tokens(self, texts, tokenization_strategy):
+        if tokenization_strategy == "first":
+            return self.model.tokenizer(texts, return_tensors="pt", padding = True, truncation=True)
+        elif tokenization_strategy == "last":
+            return self.model.tokenizerLast(texts, return_tensors="pt", padding = True, truncation=True)
+        else:
+            raise ValueError(f"tokenization_strategy {tokenization_strategy} not supported")
+
+    def eval(self, ds, tokenization_strategy = "first", batch_size=8):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.eval()
         dataloader = torch.utils.data.DataLoader(
@@ -101,8 +114,9 @@ class ClipModel:
                 labels = batch["label"]
                 nums_images = batch["nums_images"]
                 
-
-                t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True, truncation=True)
+                
+                #t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True, truncation=True)
+                t_inputs = self.get_tokens(texts, tokenization_strategy)
                 i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
                 
                 for k, v in t_inputs.items():
@@ -127,7 +141,7 @@ class ClipModel:
 
 
 
-    def train(self, train_ds, eval_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./"):
+    def train(self, train_ds, eval_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./", tokenization_strategy = "first"):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(device)
 
@@ -161,9 +175,7 @@ class ClipModel:
                 labels = batch["label"]
                 nums_images = batch["nums_images"]
 
-
-                
-                t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True, truncation=True)
+                t_inputs = self.get_tokens(texts, tokenization_strategy)
                 i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
                 
                 for k, v in t_inputs.items():
@@ -187,7 +199,7 @@ class ClipModel:
                 if (current_step % num_eval_steps == 0):
                     print("Epoch: ", epoch)
                     print("Loss: ", loss.item())
-                    eval_metrics = self.eval(eval_ds, batch_size=batch_size)
+                    eval_metrics = self.eval(eval_ds, tokenization_strategy, batch_size=batch_size)
                     print("Eval metrics: ", eval_metrics)
                     f1_score = eval_metrics["f1"]
                     if f1_score > best_metric:

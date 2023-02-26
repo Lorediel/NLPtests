@@ -39,7 +39,7 @@ class Model(nn.Module):
         
         embeddings_images = torch.cat(embeddings_images, dim=0)
 
-        embeddings = self.relu(embeddings_images)
+        
 
         embeddings = self.linear1(embeddings)
         embeddings = self.relu(embeddings)

@@ -29,14 +29,14 @@ def get_visual_embeds(imagesLists, nums_images):
     MAX_BOXES=100
     keep_boxes = [imgPreProc.filter_boxes(keep_box, mx_conf, MIN_BOXES, MAX_BOXES) for keep_box, mx_conf in zip(keep_boxes, max_conf)]
     visual_embeds = [imgPreProc.get_visual_embeds(box_feature, keep_box) for box_feature, keep_box in zip(box_features, keep_boxes)]
-    i= 0
+    k= 0
     MAX_BOXES = 100
     final_visual_embeds = []
     i=0
     for l in imagesLists:
         #number of images associated
-        b = nums_images[i]
-        i+=1
+        b = nums_images[k].item()
+        k+=1
         p = parts(MAX_BOXES, b)
         #visual embeds for the images of the same row
         current_ve = visual_embeds[i:i+b]

@@ -45,9 +45,9 @@ class Model(nn.Module):
 
         concatenated_tensor = torch.cat((embeddings_images, embeddings_text), dim=1)
 
-        embeddings = self.relu(concatenated_tensor)
+        #embeddings = self.relu(concatenated_tensor)
 
-        embeddings = self.linear1(embeddings)
+        embeddings = self.linear1(concatenated_tensor)
         embeddings = self.layer_norm(embeddings)
         embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)

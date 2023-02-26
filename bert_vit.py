@@ -26,9 +26,9 @@ class Model(nn.Module):
 
     def forward(self, input_ids, attention_mask, pixel_values, nums_images):
         
-        # Image embeddings extraction from resnet
+        # Image embeddings extraction from vit
         i_embeddings = self.vit(pixel_values = pixel_values).pooler_output
-        i_embeddings = self.flatten(i_embeddings)
+        
         #compute the max of the embeddings
         embeddings_images = []
         base = 0
@@ -45,9 +45,9 @@ class Model(nn.Module):
 
         concatenated_tensor = torch.cat((embeddings_images, embeddings_text), dim=1)
 
-        embeddings = self.relu(concatenated_tensor)
+        #embeddings = self.relu(concatenated_tensor)
 
-        embeddings = self.linear1(embeddings)
+        embeddings = self.linear1(concatenated_tensor)
         embeddings = self.layer_norm(embeddings)
         embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)
