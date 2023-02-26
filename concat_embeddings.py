@@ -9,7 +9,7 @@ def parts(a, b):
     q, r = divmod(a, b)
     return [q + 1] * r + [q] * (b - r)
 
-def get_visual_embeds(imagesLists):
+def get_visual_embeds(imagesLists, nums_images):
     total_length = len(imagesLists)
     imgPreProc = ImgPreProc()
     converted_images = imgPreProc.convertToBGR(imagesLists)
@@ -32,12 +32,14 @@ def get_visual_embeds(imagesLists):
     i= 0
     MAX_BOXES = 100
     final_visual_embeds = []
+    i=0
     for l in imagesLists:
         #number of images associated
-        b = len(l)
+        b = nums_images[i]
+        i+=1
         p = parts(MAX_BOXES, b)
         #visual embeds for the images of the same row
-        current_ve = visual_embeds[i:i+len(l)]
+        current_ve = visual_embeds[i:i+b]
         j=0
         new_ves = []
         for tensor in current_ve:
@@ -75,11 +77,11 @@ class Model(nn.Module):
     def forward(self, images, input_ids, attention_mask, pixel_values, nums_images):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         # clip embeddings
-        t_embeddings = self.base_model.get_text_features(
+        t_embeddings = self.clip.get_text_features(
             input_ids=input_ids, attention_mask=attention_mask
         )
 
-        i_embeddings = self.base_model.get_image_features(pixel_values = pixel_values) 
+        i_embeddings = self.clip.get_image_features(pixel_values = pixel_values) 
 
         #compute the max of the emnbeddings
         embeddings_images = []
@@ -146,7 +148,7 @@ class Concatenated_Model():
                 nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
 
                 self.model(
-                    images = flattened_images,
+                    images = images_list,
                     input_ids = t_inputs.input_ids,
                     attention_mask = t_inputs.attention_mask,
                     pixel_values = i_inputs.pixel_values,
