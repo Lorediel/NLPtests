@@ -125,6 +125,7 @@ class Concatenated_Model():
         
     def train(self, train_ds, val_ds, batch_size = 8, num_epochs = 3):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(device)
         dataloader = torch.utils.data.DataLoader(
             train_ds, batch_size=batch_size, shuffle=True, collate_fn = collate_fn
         )
