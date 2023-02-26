@@ -109,10 +109,10 @@ class Model(nn.Module):
         pixel_values = self.feature_extractor(images=images, return_tensors="pt").pixel_values
         pixel_values = pixel_values.to(device)
         output_ids = self.vit.generate(pixel_values=pixel_values)
-        preds = self.captionTokenizertokenizer.batch_decode(output_ids, skip_special_tokens=True)
+        preds = self.captionTokenizer.batch_decode(output_ids, skip_special_tokens=True)
         captions = [pred.strip() for pred in preds]
 
-        t_inputs = self.model.tokenizer(captions, padding=True, truncation=True, return_tensors="pt")
+        t_inputs = self.bertTokenizer(captions, padding=True, truncation=True, return_tensors="pt")
         input_ids = t_inputs.input_ids.to(device)
         attention_mask = t_inputs.attention_mask.to(device)
         caption_embeddings = self.bert(input_ids = input_ids, attention_mask = attention_mask).pooler_output # caption_embeddings.shape = (batch_size, 768)

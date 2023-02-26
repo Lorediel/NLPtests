@@ -9,16 +9,25 @@ class BertModel():
     checkpoint = "dbmdz/bert-base-italian-xxl-cased"
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained(self.checkpoint)
+        self.tokenizerLast = AutoTokenizer.from_pretrained(self.checkpoint, padding_side = 'left', truncation_side = 'left')
         self.model = BertForSequenceClassification.from_pretrained(self.checkpoint, num_labels = 4)
         self.data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
     
 
     def tokenize_function(self, ds):
-        return self.tokenizer(ds['Text'], truncation=True)
+        return self.tokenizer(ds['Text'], truncation=True, padding=True)
     
-    def process_ds(self, datasets):
+    def tokenizeLast_function(self, ds):
+        return self.tokenizerLast(ds['Text'], truncation=True, padding=True)
+    
+    def process_ds(self, datasets, tokenization_strategy = "first"):
         # Tokenize the datasets
-        tokenized_ds = datasets.map(self.tokenize_function, batched=True)
+        if tokenization_strategy == 'first':
+            tokenized_ds = datasets.map(self.tokenize_function, batched=True)
+        elif tokenization_strategy == 'last':
+            tokenized_ds = datasets.map(self.tokenizeLast_function, batched=True)
+        else:
+            raise ValueError("tokenization_strategy must be either 'first' or 'last'")
 
         # Rename the columns
         tokenized_ds = tokenized_ds.rename_column("Label", "labels")

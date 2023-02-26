@@ -13,6 +13,7 @@ class Model(nn.Module):
         self.resnet = ResNetModel.from_pretrained("microsoft/resnet-18")
         self.bert = BertModel.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
         self.tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
+        self.tokenizerLast = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased", padding_side = 'left', truncation_side = 'left')
         self.processor = AutoImageProcessor.from_pretrained("microsoft/resnet-18")
         self.flatten = nn.Flatten(1,-1)
         self.linear1 = nn.Linear(768 + 512, 512)
@@ -69,8 +70,15 @@ class BertResnetConcatModel():
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(self.device)
     
+    def get_tokens(self, texts, tokenization_strategy):
+        if tokenization_strategy == "first":
+            return self.model.tokenizer(texts, return_tensors="pt", padding = True, truncation=True)
+        elif tokenization_strategy == "last":
+            return self.model.tokenizerLast(texts, return_tensors="pt", padding = True, truncation=True)
+        else:
+            raise ValueError(f"tokenization_strategy {tokenization_strategy} not supported")
 
-    def eval(self, ds, batch_size = 8):
+    def eval(self, ds, tokenization_strategy, batch_size = 8):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.eval()
         dataloader = torch.utils.data.DataLoader(
@@ -88,7 +96,7 @@ class BertResnetConcatModel():
                 nums_images = batch["nums_images"]
 
                 
-                t_inputs = self.model.tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
+                t_inputs = self.get_tokens(texts, tokenization_strategy)
                 i_inputs = self.model.processor(images_list, return_tensors="pt", padding=True)
 
                 for k, v in t_inputs.items():
@@ -111,7 +119,7 @@ class BertResnetConcatModel():
         metrics = compute_metrics(total_labels, total_preds)
         return metrics
 
-    def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./"):
+    def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./", tokenization_strategy = "first"):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.train()
         self.model.to(device)
@@ -143,7 +151,7 @@ class BertResnetConcatModel():
 
                 nums_images = batch["nums_images"]
 
-                t_inputs = self.model.tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
+                t_inputs = self.get_tokens(texts, tokenization_strategy)
                 i_inputs = self.model.processor(images_list, return_tensors="pt", padding=True)
 
                 for k, v in t_inputs.items():
@@ -165,7 +173,7 @@ class BertResnetConcatModel():
 
                 if (current_step % num_eval_steps == 0):
                     print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
-                    eval_metrics = self.eval(val_ds)
+                    eval_metrics = self.eval(val_ds, tokenization_strategy, batch_size = batch_size)
                     print("Eval metrics: ", eval_metrics)
                     f1_score = eval_metrics["f1"]
                     if f1_score > best_metric:
