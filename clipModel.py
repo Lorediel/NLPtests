@@ -43,7 +43,7 @@ class Model(nn.Module):
         base = 0
         for i in range(len(nums_images)):
             tensor = i_embeddings[base:base+nums_images[i]]
-            max_tensor, _ = torch.mean(tensor, dim=0, keepdim=True)
+            max_tensor = torch.mean(tensor, dim=0, keepdim=True)
             embeddings_images.append(max_tensor)
             base += nums_images[i]
         
