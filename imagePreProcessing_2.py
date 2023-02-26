@@ -164,4 +164,10 @@ class ImagePreProcessing:
                 img_list.append(img)
         return img_list
 
-
+    def convertToBGR(self, images):
+        #images is a list of PIL images
+        img_list = []
+        for image in images:
+            img = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+            img_list.append(img)
+        return img_list

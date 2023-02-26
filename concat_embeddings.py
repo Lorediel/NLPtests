@@ -1,4 +1,4 @@
-from imagePreProcessing_2 import ImagePreProcessing as ImgPreProc
+from NLPtests.imagePreProcessing_2 import ImagePreProcessing as ImgPreProc
 import torch
 from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEncoderModel, AutoTokenizer, BertModel
 from transformers import VisionEncoderDecoderModel, ViTFeatureExtractor, AutoTokenizer
@@ -10,11 +10,10 @@ def parts(a, b):
     return [q + 1] * r + [q] * (b - r)
 
 def get_visual_embeds(imagesLists):
-    total_length = 0
-    for l in imagesLists:
-        total_length += len(l)
+    total_length = len(imagesLists)
     imgPreProc = ImgPreProc()
-    images, batched_inputs = imgPreProc.prepare_image_inputs(imagesLists)
+    converted_images = imgPreProc.convertToBGR(imagesLists)
+    images, batched_inputs = imgPreProc.prepare_image_inputs(converted_images)
     features = imgPreProc.get_features(images)
     proposals = imgPreProc.get_proposals(images, features)
     box_features, features_list = imgPreProc.get_box_features(features, proposals, total_length)
@@ -54,6 +53,7 @@ def get_visual_embeds(imagesLists):
 
 class Model(nn.Module):
     def __init__(self):
+        super(Model, self).__init__()
         # Clip
         self.clip = VisionTextDualEncoderModel.from_pretrained("clip-italian/clip-italian")
         self.processor = AutoProcessor.from_pretrained("clip-italian/clip-italian")
