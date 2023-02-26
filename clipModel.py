@@ -18,7 +18,6 @@ class Model(nn.Module):
         self.base_model = VisionTextDualEncoderModel.from_pretrained("clip-italian/clip-italian")
         self.processor = AutoProcessor.from_pretrained("clip-italian/clip-italian")
         self.tokenizer = AutoTokenizer.from_pretrained("clip-italian/clip-italian")
-        self.feature_extractor = AutoFeatureExtractor.from_pretrained("openai/clip-vit-base-patch32")
         
         #self.dropout2 = nn.Dropout(0.2)
         #self.layernorm1 = nn.LayerNorm(512*2)

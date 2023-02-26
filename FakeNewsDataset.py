@@ -11,7 +11,7 @@ import torch
 def pil_loader(path: str):
     with open(path, "rb") as f:
         im = Image.open(f)
-        return im.convert("RGB")
+        return im.convert("BGR")
 
 
 class FakeNewsDataset(Dataset):

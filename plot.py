@@ -310,8 +310,3 @@ def plot_bar_bins(data,title):
     plt.xticks(x+width*1.5, ticks)
     plt.show()
 
-
-
-        
-#plot_bar_bins(tweet_data,"Tweets")
-plot_bar_bins(article_data, "Articles")

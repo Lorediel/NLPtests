@@ -164,3 +164,4 @@ class ImagePreProcessing:
                 img_list.append(img)
         return img_list
 
+

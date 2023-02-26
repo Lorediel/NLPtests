@@ -155,10 +155,12 @@ def get_visual_embeds(imagesPaths):
     for keep_box, mx_conf in temp:
         keep_boxes.append(keep_box)
         max_conf.append(mx_conf)
-    MIN_BOXES=10
+    MIN_BOXES=100
     MAX_BOXES=100
     keep_boxes = [imgPreProc.filter_boxes(keep_box, mx_conf, MIN_BOXES, MAX_BOXES) for keep_box, mx_conf in zip(keep_boxes, max_conf)]
     visual_embeds = [imgPreProc.get_visual_embeds(box_feature, keep_box) for box_feature, keep_box in zip(box_features, keep_boxes)]
+    
+    
     i= 0
     MAX_BOXES = 100
     final_visual_embeds = []
@@ -175,6 +177,7 @@ def get_visual_embeds(imagesPaths):
             j+=1
         new_ves = torch.cat(new_ves, 0)
         final_visual_embeds.append(new_ves)
+    
     return final_visual_embeds
 
 def parts(a, b):
