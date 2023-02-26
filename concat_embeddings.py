@@ -134,10 +134,6 @@ class Concatenated_Model():
                 labels = batch["label"]
                 nums_images = batch["nums_images"]
 
-                flattened_images = []
-                for img_list in images_list:
-                    for img in img_list:
-                        flattened_images.append(img)
 
                 t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True, truncation=True)
                 i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
