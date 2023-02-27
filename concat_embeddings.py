@@ -1,9 +1,12 @@
 from NLPtests.imagePreProcessing_2 import ImagePreProcessing as ImgPreProc
 import torch
-from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEncoderModel, AutoTokenizer, BertModel
+from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEncoderModel, AutoTokenizer, BertModel, AdamW, get_scheduler
 from transformers import VisionEncoderDecoderModel, ViTFeatureExtractor, AutoTokenizer
 from NLPtests.FakeNewsDataset import collate_fn
 import torch.nn as nn
+from tqdm.auto import tqdm
+import os
+from NLPtests.utils import compute_metrics
 
 def parts(a, b):
     q, r = divmod(a, b)
@@ -73,6 +76,32 @@ class Model(nn.Module):
         # bert
         self.bert = BertModel.from_pretrained("bert-base-uncased")
         self.bertTokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+
+
+        self.relu = nn.ReLU()
+        self.linear1 = nn.Sequential(
+            nn.Linear(3072, 1536),
+            nn.LayerNorm(1536),
+            nn.dropout(0.2),
+            nn.ReLU(),
+        )
+        self.linear2 = nn.Sequential(
+            nn.Linear(1536, 1536),
+            nn.LayerNorm(1536),
+            nn.dropout(0.2),
+            nn.ReLU(),
+        )
+        self.linear3 = nn.Sequential(
+            nn.Linear(1536, 768),
+            nn.LayerNorm(768),
+            nn.dropout(0.1),
+            nn.ReLU(),
+        )
+        self.linear4 = nn.Linear(768, 4)
+
+        self.softmax = nn.Softmax(dim=1)
+            
+
         
     def forward(self, images, input_ids, attention_mask, pixel_values, nums_images):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -96,6 +125,7 @@ class Model(nn.Module):
         clip_embeddings = torch.cat((t_embeddings, embeddings_images), dim=1) # clip_embeddings.shape = (batch_size, 1024)
         print(clip_embeddings.shape)
 
+
         # detectron
         visual_embeds = self.patch_embeddings(images)
         averages_per_row = []
@@ -104,6 +134,7 @@ class Model(nn.Module):
             averages_per_row.append(avg_ve)
         average_patch_embeddings = torch.cat(averages_per_row, 0) # final_embeddings.shape = (batch_size, 1024)
         print(average_patch_embeddings.shape)
+        
         
         # Take the image captions 
         pixel_values = self.feature_extractor(images=images, return_tensors="pt").pixel_values
@@ -119,17 +150,105 @@ class Model(nn.Module):
         print(caption_embeddings.shape)
 
 
+        # Concatenate the embeddings
+        final_embeddings = torch.cat((clip_embeddings, average_patch_embeddings, caption_embeddings), dim=1) # final_embeddings.shape = (batch_size, 3072)
+        print(final_embeddings.shape)
+
+        final_embeddings = self.relu(final_embeddings)
+        final_embeddings = self.linear1(final_embeddings)
+        final_embeddings = self.linear2(final_embeddings)
+        final_embeddings = self.linear3(final_embeddings)
+        final_embeddings = self.linear4(final_embeddings)
+        logits = final_embeddings
+        probs = self.softmax(logits)
+        return logits, probs
+
+
+def get_tokens(self, texts, tokenization_strategy):
+        if tokenization_strategy == "first":
+            return self.model.tokenizer(texts, return_tensors="pt", padding = True, truncation=True)
+        elif tokenization_strategy == "last":
+            return self.model.tokenizerLast(texts, return_tensors="pt", padding = True, truncation=True)
+        else:
+            raise ValueError(f"tokenization_strategy {tokenization_strategy} not supported")
+
+
+
 class Concatenated_Model():
     def __init__(self):
         self.model = Model()
         
-    def train(self, train_ds, val_ds, batch_size = 8, num_epochs = 3):
+    def eval(self, ds, batch_size = 8, tokenization_strategy="first" ):
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.model.eval()
+        dataloader = torch.utils.data.DataLoader(
+            ds, batch_size=batch_size, collate_fn = collate_fn
+        )
+        total_preds = []
+        total_labels = []
+        progress_bar = tqdm(range(len(dataloader)))
+        with torch.no_grad():
+            for batch in dataloader:
+                texts = batch["text"]
+                images_list = batch["images"]
+                labels = batch["label"]
+                nums_images = batch["nums_images"]
+
+
+                #t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True, truncation=True)
+                t_inputs = self.model.get_tokens(texts, tokenization_strategy)
+                i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
+                
+                for k, v in t_inputs.items():
+                    t_inputs[k] = v.to(device)
+                for k, v in i_inputs.items():
+                    i_inputs[k] = v.to(device)
+
+                nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
+
+                outputs = self.model(
+                    images = images_list,
+                    input_ids = t_inputs.input_ids,
+                    attention_mask = t_inputs.attention_mask,
+                    pixel_values = i_inputs.pixel_values,
+                    nums_images = nums_images
+                )
+
+                logits = outputs[0]
+
+                preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
+                total_preds += list(preds)
+                total_labels += list(labels)
+                progress_bar.update(1)
+        metrics = compute_metrics(total_labels, total_preds)
+        return metrics
+                
+
+    
+    def train(self, train_ds, eval_ds, batch_size = 8, num_epochs = 3, lr = 1e-5, warmup_steps = 0, num_eval_steps = 52, tokenization_strategy="first", save_path = "./"):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(device)
         dataloader = torch.utils.data.DataLoader(
             train_ds, batch_size=batch_size, shuffle=True, collate_fn = collate_fn
         )
 
+        criterion = nn.CrossEntropyLoss()
+        
+        self.model.train()
+        # Initialize the optimizer
+        optimizer = AdamW(self.model.parameters(), lr=lr)
+        num_training_steps=len(dataloader) * num_epochs
+        # Initialize the scheduler
+        scheduler = get_scheduler(
+            name="linear",
+            optimizer=optimizer,
+            num_warmup_steps=warmup_steps,
+            num_training_steps=num_training_steps
+        )
+        progress_bar = tqdm(range(num_training_steps))
+        current_step = 0
+        # save the best model
+        best_metric = 0
         for epoch in range(num_epochs):
             for batch in dataloader:
                 texts = batch["text"]
@@ -138,7 +257,8 @@ class Concatenated_Model():
                 nums_images = batch["nums_images"]
 
 
-                t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True, truncation=True)
+                #t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True, truncation=True)
+                t_inputs = self.model.get_tokens(texts, tokenization_strategy)
                 i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
                 
                 for k, v in t_inputs.items():
@@ -148,12 +268,35 @@ class Concatenated_Model():
                 
                 nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
 
-                self.model(
+                outputs = self.model(
                     images = images_list,
                     input_ids = t_inputs.input_ids,
                     attention_mask = t_inputs.attention_mask,
                     pixel_values = i_inputs.pixel_values,
                     nums_images = nums_images
                 )
-                break
-            break
+                
+                logits = outputs[0]
+                loss = criterion(logits, labels)
+                if (current_step % num_eval_steps == 0):
+                    print("Epoch: ", epoch)
+                    print("Loss: ", loss.item())
+                    eval_metrics = self.eval(eval_ds, tokenization_strategy, batch_size=batch_size)
+                    print("Eval metrics: ", eval_metrics)
+                    f1_score = eval_metrics["f1"]
+                    if f1_score > best_metric:
+                        print("New best model found")
+                        best_metric = f1_score
+                        torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
+                    print("Best metric: ", best_metric)
+                    self.model.train()
+                
+
+                loss.backward()
+                optimizer.step()
+                scheduler.step()
+                optimizer.zero_grad()
+                progress_bar.update(1)
+                current_step += 1
+
+        return best_metric

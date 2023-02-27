@@ -8,37 +8,6 @@ from NLPtests.FakeNewsDataset import FakeNewsDataset
 
 
 
-def splitDataset(dataset): 
-    # 80% train, 20% validation
-    validation_split = 0.2
-    random_seed = 64
-
-    dataset_size = len(dataset)
-    indices = list(range(dataset_size))
-    split = int(np.floor(validation_split * dataset_size))
-    np.random.seed(random_seed)
-    np.random.shuffle(indices)
-    train_indices, val_indices = indices[split:], indices[:split]
-    train_dataset = Subset(dataset, train_indices)
-    validation_dataset = Subset(dataset, val_indices)
-    
-    return train_dataset, validation_dataset
-
-
-def splitTrainTestVal(filepath, delete_date = False):
-    data_files = {"train": filepath}
-    dataset_dict = load_dataset("csv", data_files=filepath, delimiter="\t")
-    if (delete_date):
-        dataset_dict = dataset_dict.remove_columns(["Date"])
-    dataset = dataset_dict["train"]
-    dataset = dataset.shuffle(seed = 64)
-    train_testvalid = dataset.train_test_split(test_size=0.2)
-    # gather everyone if you want to have a single DatasetDict
-    train_test_valid_dataset = DatasetDict({
-    'train': train_testvalid['train'],
-    'valid': train_testvalid['test']})
-    return train_test_valid_dataset
-
 def splitTrainTestVal2(filepath, dataset, delete_date = False):
     indexes = take_per_type_label_indexes(dataset)
     train_indexes = []
@@ -153,18 +122,52 @@ def get_train_val_indexes(indexes):
     validation_indexes = indexes[:split]
     return train_indexes, validation_indexes
 
+def get_only_type(dataset, type):
+    indexes = []
+    for i in range(len(dataset)):
+        x = dataset[i]
+        if (x["type"] == type):
+            indexes.append(i)
+    return Subset(dataset, indexes)
+
+def stratified_by_label(dataset):
+    indexes = {
+        "0": [],
+        "1": [],
+        "2": [],
+        "3": []
+    }
+    for i in range(len(dataset)):
+        x = dataset[i]
+        if (x["label"] == 0):
+            indexes["0"].append(i)
+        elif (x["label"] == 1):
+            indexes["1"].append(i)
+        elif (x["label"] == 2):
+            indexes["2"].append(i)
+        elif (x["label"] == 3):
+            indexes["3"].append(i)
+    train_indexes = []
+    validation_indexes = []
+    for k,v in indexes.items():
+        t_i, v_i = get_train_val_indexes(v)
+        train_indexes += t_i
+        validation_indexes += v_i
+    train_dataset = Subset(dataset, train_indexes)
+    validation_dataset = Subset(dataset, validation_indexes)
+    return train_dataset, validation_dataset
+    
 
 if __name__ == '__main__':
     ds = FakeNewsDataset("/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv", "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
     
-    train, val = stratifiedSplit(ds)
-    print(train[0])
-    print(val[0])
-    print(train[54])
-    print(val[54])
+    tweet_ds  = get_only_type(ds, "tweet")
+    article_ds = get_only_type(ds, "article")
 
-    ds = splitTrainTestVal2("/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv", ds)
-    print(ds["train"][0])
-    print(ds["valid"][0])
-    print(ds["train"][54])
-    print(ds["valid"][54])
+    tweet_train, tweet_validation = stratified_by_label(tweet_ds)
+    article_train, article_validation = stratified_by_label(article_ds)
+
+    print("tweet train: ", len(tweet_train))
+    print("tweet validation: ", len(tweet_validation))
+    print("article train: ", len(article_train))
+    print("article validation: ", len(article_validation))
