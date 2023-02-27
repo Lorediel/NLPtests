@@ -3,7 +3,7 @@ import requests
 import torch
 import torch.nn as nn
 import ast
-from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEncoderModel, AutoTokenizer, AutoFeatureExtractor, PretrainedConfig, PreTrainedModel
+from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEncoderModel, AutoTokenizer, AutoFeatureExtractor, PretrainedConfig, PreTrainedModel, CLIPProcessor
 import os
 from tqdm.auto import tqdm
 from NLPtests.utils import *
@@ -16,7 +16,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
         
         self.base_model = VisionTextDualEncoderModel.from_pretrained("clip-italian/clip-italian")
-        self.processor = AutoProcessor.from_pretrained("clip-italian/clip-italian")
+        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         self.tokenizer = AutoTokenizer.from_pretrained("clip-italian/clip-italian")
         self.tokenizerLast = AutoTokenizer.from_pretrained("clip-italian/clip-italian", padding_side = 'left', truncation_side = 'left')
         
@@ -96,7 +96,7 @@ def pil_loader(path: str):
 class ClipModel:
     #tokenizer_max_length = 512
 
-    
+
 
     def __init__(self):
         self.model = Model()

@@ -80,21 +80,21 @@ class Model(nn.Module):
 
         self.relu = nn.ReLU()
         self.linear1 = nn.Sequential(
-            nn.Linear(3072, 1536),
-            nn.LayerNorm(1536),
-            nn.dropout(0.2),
+            nn.Linear(2816, 1408),
+            nn.LayerNorm(1408),
+            nn.Dropout(0.2),
             nn.ReLU(),
         )
         self.linear2 = nn.Sequential(
-            nn.Linear(1536, 1536),
-            nn.LayerNorm(1536),
-            nn.dropout(0.2),
+            nn.Linear(1408, 1408),
+            nn.LayerNorm(1408),
+            nn.Dropout(0.2),
             nn.ReLU(),
         )
         self.linear3 = nn.Sequential(
-            nn.Linear(1536, 768),
+            nn.Linear(1408, 768),
             nn.LayerNorm(768),
-            nn.dropout(0.1),
+            nn.Dropout(0.1),
             nn.ReLU(),
         )
         self.linear4 = nn.Linear(768, 4)
@@ -127,7 +127,7 @@ class Model(nn.Module):
 
 
         # detectron
-        visual_embeds = self.patch_embeddings(images)
+        visual_embeds = self.patch_embeddings(images, nums_images)
         averages_per_row = []
         for ve in visual_embeds:
             avg_ve = torch.mean(ve, dim=0, keepdim=True)
@@ -164,19 +164,21 @@ class Model(nn.Module):
         return logits, probs
 
 
-def get_tokens(self, texts, tokenization_strategy):
-        if tokenization_strategy == "first":
-            return self.model.tokenizer(texts, return_tensors="pt", padding = True, truncation=True)
-        elif tokenization_strategy == "last":
-            return self.model.tokenizerLast(texts, return_tensors="pt", padding = True, truncation=True)
-        else:
-            raise ValueError(f"tokenization_strategy {tokenization_strategy} not supported")
 
 
 
 class Concatenated_Model():
     def __init__(self):
         self.model = Model()
+
+    def get_tokens(self, texts, tokenization_strategy):
+        if tokenization_strategy == "first":
+            return self.model.bertTokenizer(texts, return_tensors="pt", padding = True, truncation=True)
+        elif tokenization_strategy == "last":
+            return self.model.bertTokenizerLast(texts, return_tensors="pt", padding = True, truncation=True)
+        else:
+            raise ValueError(f"tokenization_strategy {tokenization_strategy} not supported")
+
         
     def eval(self, ds, batch_size = 8, tokenization_strategy="first" ):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -281,13 +283,13 @@ class Concatenated_Model():
                 preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
                 loss = criterion(logits, labels)
                 metrics = compute_metrics(labels, preds)
-                print("Train metrics: ", metrics)
                 
-                """
+
+                
                 if (current_step % num_eval_steps == 0):
                     print("Epoch: ", epoch)
                     print("Loss: ", loss.item())
-                    eval_metrics = self.eval(eval_ds, tokenization_strategy, batch_size=batch_size)
+                    eval_metrics = self.eval(eval_ds, batch_size=batch_size, tokenization_strategy= tokenization_strategy )
                     print("Eval metrics: ", eval_metrics)
                     f1_score = eval_metrics["f1"]
                     if f1_score > best_metric:
@@ -296,7 +298,7 @@ class Concatenated_Model():
                         torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
                     print("Best metric: ", best_metric)
                     self.model.train()
-                """
+                
 
                 loss.backward()
                 optimizer.step()
