@@ -135,14 +135,13 @@ class ClipModel:
                 
                 for k, v in t_inputs.items():
                     t_inputs[k] = v.to(device)
-                for k, v in i_inputs.items():
-                    i_inputs[k] = v.to(device)
                 
+                pixel_values = torch.tensor(np.array(i_inputs["pixel_values"])).to(device)
                 nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
                 logits, probs = self.model(
                     input_ids=t_inputs.input_ids,
                     attention_mask=t_inputs.attention_mask,
-                    pixel_values=i_inputs.pixel_values,
+                    pixel_values=pixel_values,
                     nums_images = nums_images,
                 )
 
@@ -194,15 +193,15 @@ class ClipModel:
                 
                 for k, v in t_inputs.items():
                     t_inputs[k] = v.to(device)
-                for k, v in i_inputs.items():
-                    i_inputs[k] = v.to(device)
+                
+                pixel_values = torch.tensor(np.array(i_inputs["pixel_values"])).to(device)
                 labels = torch.tensor(labels).to(device)
 
                 nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
                 outputs = self.model(
                     input_ids=t_inputs.input_ids,
                     attention_mask=t_inputs.attention_mask,
-                    pixel_values=i_inputs.pixel_values,
+                    pixel_values=pixel_values,
                     nums_images = nums_images,
                 )
                 
