@@ -276,8 +276,14 @@ class Concatenated_Model():
                     nums_images = nums_images
                 )
                 
+                
                 logits = outputs[0]
+                preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
                 loss = criterion(logits, labels)
+                metrics = compute_metrics(labels, preds)
+                print("Train metrics: ", metrics)
+                
+                """
                 if (current_step % num_eval_steps == 0):
                     print("Epoch: ", epoch)
                     print("Loss: ", loss.item())
@@ -290,7 +296,7 @@ class Concatenated_Model():
                         torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
                     print("Best metric: ", best_metric)
                     self.model.train()
-                
+                """
 
                 loss.backward()
                 optimizer.step()
