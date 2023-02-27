@@ -65,7 +65,7 @@ class Model(nn.Module):
         preds = []
         for i in range(len(image_embeds)):
             img_embed = image_embeds[i]
-            sim = F.cosine_similarity(image_embeds, self.texts_embeds, dim=1)
+            sim = F.cosine_similarity(image_embeds, self.labels_embeddings, dim=1)
             closest = sim.argmax()
             preds.append(closest)
         
