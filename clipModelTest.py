@@ -16,9 +16,10 @@ class Model(nn.Module):
         super(Model, self).__init__()
         
         self.base_model = VisionTextDualEncoderModel.from_pretrained("clip-italian/clip-italian")
-        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        self.processor = CLIPProcessor.from_pretrained("clip-italian/clip-italian")
         self.tokenizer = AutoTokenizer.from_pretrained("clip-italian/clip-italian")
         self.tokenizerLast = AutoTokenizer.from_pretrained("clip-italian/clip-italian", padding_side = 'left', truncation_side = 'left')
+        self.feature_extractor = AutoFeatureExtractor.from_pretrained("openai/clip-vit-base-patch32")
         
         #self.dropout2 = nn.Dropout(0.2)
         #self.layernorm1 = nn.LayerNorm(512*2)
@@ -130,7 +131,7 @@ class ClipModel:
                 
                 #t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True, truncation=True)
                 t_inputs = self.get_tokens(texts, tokenization_strategy)
-                i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
+                i_inputs = self.model.feature_extractor(images = images_list)
                 
                 for k, v in t_inputs.items():
                     t_inputs[k] = v.to(device)
@@ -189,7 +190,7 @@ class ClipModel:
                 nums_images = batch["nums_images"]
 
                 t_inputs = self.get_tokens(texts, tokenization_strategy)
-                i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
+                i_inputs = self.model.feature_extractor(images = images_list, return_tensors="pt", padding=True)
                 
                 for k, v in t_inputs.items():
                     t_inputs[k] = v.to(device)
