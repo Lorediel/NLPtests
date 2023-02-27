@@ -8,6 +8,7 @@ import os
 from tqdm.auto import tqdm
 from NLPtests.utils import *
 from NLPtests.FakeNewsDataset import collate_fn
+import torch.nn.functional as F
 
 
 
@@ -31,6 +32,46 @@ class Model(nn.Module):
         self.dropout = nn.Dropout(0.1)
         self.softmax = nn.Softmax(dim=1)
 
+        self.labels = [
+            "Un'immagine sicuramente falsa",
+            "Un'immagine probabilmente falsa",
+            "Un'immagine probabilmente vera",
+            "Un'immagine sicuramente vera",
+        ]
+
+        self.labels_embeddings = self.embed_texts(self.labels, self.processor, self.base_model)
+
+    def embed_texts(self, texts, processor, model):
+        inputs = processor(text=texts, padding="longest")
+        input_ids = torch.tensor(inputs["input_ids"])
+        attention_mask = torch.tensor(inputs["attention_mask"])
+        
+        with torch.no_grad():    
+            embeddings = model.get_text_features(
+                input_ids=input_ids, attention_mask=attention_mask
+            )
+        return embeddings
+
+    def embed_images(self, images, processor, model):
+        inputs = processor(images=images)
+
+        pixel_values = torch.tensor(np.array(inputs["pixel_values"]))
+
+        with torch.no_grad():
+            embeddings = model.get_image_features(pixel_values=pixel_values)
+        return embeddings
+
+    def classify_image(self, image_embeds):
+        preds = []
+        for i in range(len(image_embeds)):
+            img_embed = image_embeds[i]
+            sim = F.cosine_similarity(image_embeds, self.texts_embeds, dim=1)
+            closest = sim.argmax()
+            preds.append(closest)
+        
+       
+       
+
     def forward(self, input_ids, attention_mask, pixel_values, nums_images):
         
         t_embeddings = self.base_model.get_text_features(
@@ -40,6 +81,7 @@ class Model(nn.Module):
         i_embeddings = self.base_model.get_image_features(pixel_values = pixel_values)
 
 
+        """
         new_te = []
         for i in range(len(nums_images)):
             current_text_embedding = t_embeddings[i]
@@ -47,7 +89,9 @@ class Model(nn.Module):
             current_text_embedding = current_text_embedding.repeat(nums_images[i], 1)
             new_te.append(current_text_embedding)
         t_embeddings = torch.cat(new_te, dim=0)
-         
+        """
+        preds = self.classify_image(i_embeddings)
+        return preds
         
         
         embeddings_images = i_embeddings
@@ -204,10 +248,12 @@ class ClipModel:
                     pixel_values=pixel_values,
                     nums_images = nums_images,
                 )
+
                 
-                logits = outputs[0]
+                #logits = outputs[0]
                 
-                preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
+                #preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
+                """
                 loss = criterion(logits, labels)
                 if (current_step % num_eval_steps == 0):
                     print("Epoch: ", epoch)
@@ -221,12 +267,13 @@ class ClipModel:
                         torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
                     print("Best metric: ", best_metric)
                     self.model.train()
-                
-
-                loss.backward()
-                optimizer.step()
-                scheduler.step()
-                optimizer.zero_grad()
+                """"
+                metrics = compute_metrics(batch["label"], outputs)
+                print(metrics)
+                #loss.backward()
+                #optimizer.step()
+                #scheduler.step()
+                #optimizer.zero_grad()
                 progress_bar.update(1)
                 
         
