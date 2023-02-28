@@ -109,8 +109,8 @@ class BertModel():
                     t_inputs[k] = v.to(device)
                 
                 logits, probs = self.model(
-                    input_ids=t_inputs.input_ids,
-                    attention_mask=t_inputs.attention_mask,
+                    input_ids=t_inputs["input_ids"],
+                    attention_mask=t_inputs["attention_mask"],
                 )
 
                 preds = torch.argmax(logits, dim=1).tolist()
@@ -158,8 +158,8 @@ class BertModel():
                 labels_tensor = torch.tensor(labels).to(device)
 
                 logits, probs = self.model(
-                    input_ids=t_inputs.input_ids,
-                    attention_mask=t_inputs.attention_mask
+                    input_ids=t_inputs["input_ids"],
+                    attention_mask=t_inputs["attention_mask"]
                 )
 
                 loss = criterion(logits, labels_tensor)
