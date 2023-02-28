@@ -56,7 +56,7 @@ class BertModel():
             return self.model.tokenizerLast(texts, return_tensors="pt", padding = True, truncation=True)
         elif tokenization_strategy == "head-tail":
             max_len = 512
-            tokens = self.model.tokenizer(texts, return_tensors="pt")
+            tokens = self.model.tokenizer(texts)
             half_len = int(max_len/2)
             post_tokens = {
                 "input_ids": [],
@@ -73,6 +73,8 @@ class BertModel():
                     attention_mask = [1] * tl + [0] * (max_len - tl)
                 post_tokens["input_ids"].append(new_tokens)
                 post_tokens["attention_mask"].append(attention_mask)
+            post_tokens["input_ids"] = torch.tensor(post_tokens["input_ids"])
+            post_tokens["attention_mask"] = torch.tensor(post_tokens["attention_mask"])
             return post_tokens
         else:
             raise ValueError(f"tokenization_strategy {tokenization_strategy} not supported")
