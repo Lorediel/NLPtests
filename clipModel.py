@@ -155,8 +155,8 @@ class ClipModel:
                 
                 nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
                 logits, probs = self.model(
-                    input_ids=t_inputs.input_ids,
-                    attention_mask=t_inputs.attention_mask,
+                    input_ids=t_inputs["input_ids"],
+                    attention_mask=t_inputs["attention_mask"],
                     pixel_values=i_inputs.pixel_values,
                     nums_images = nums_images,
                 )
@@ -215,8 +215,8 @@ class ClipModel:
 
                 nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
                 outputs = self.model(
-                    input_ids=t_inputs.input_ids,
-                    attention_mask=t_inputs.attention_mask,
+                    input_ids=t_inputs["input_ids"],
+                    attention_mask=t_inputs["attention_mask"],
                     pixel_values=i_inputs.pixel_values,
                     nums_images = nums_images,
                 )
