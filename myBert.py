@@ -62,6 +62,12 @@ class BertModel():
                 "input_ids": [],
                 "attention_mask": []
             }
+            max_token_len = 0
+            for token_list in tokens.input_ids:
+                tl = len(token_list)
+                if tl>max_token_len:
+                    max_token_len = tl
+            max_len = min(max_token_len, max_len)
             for token_list in tokens.input_ids:
                 new_tokens = []
                 tl = len(token_list)
@@ -69,7 +75,8 @@ class BertModel():
                     new_tokens = token_list[:half_len] + token_list[-half_len:]
                     attention_mask = [1] * max_len
                 elif tl<=max_len:
-                    new_tokens = token_list
+                    # add padding
+                    new_tokens = token_list + [0] * (max_len - tl)
                     attention_mask = [1] * tl + [0] * (max_len - tl)
                 post_tokens["input_ids"].append(new_tokens)
                 post_tokens["attention_mask"].append(attention_mask)
