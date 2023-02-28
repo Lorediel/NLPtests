@@ -12,6 +12,7 @@ class BertModel():
         self.tokenizerLast = AutoTokenizer.from_pretrained(self.checkpoint, padding_side = 'left', truncation_side = 'left')
         self.model = BertForSequenceClassification.from_pretrained(self.checkpoint, num_labels = 4)
         self.data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
+
     
 
     def tokenize_function(self, ds):
@@ -20,12 +21,36 @@ class BertModel():
     def tokenizeLast_function(self, ds):
         return self.tokenizerLast(ds['Text'], truncation=True, padding=True)
     
+    def tokenizeHeadTail_function(self, ds):
+        texts = ds['Text']
+        max_len = self.tokenizer.model_max_length
+        tokens = self.tokenizer(texts)
+        half_len = int(max_len/2)
+        post_tokens = {
+            "input_ids": [],
+            "attention_mask": []
+        }
+        for token_list in tokens.input_ids:
+            new_tokens = []
+            tl = len(token_list)
+            if tl>max_len:
+                new_tokens = token_list[:half_len] + token_list[-half_len:]
+                attention_mask = [1] * max_len
+            elif tl<=max_len:
+                new_tokens = token_list
+                attention_mask = [1] * tl + [0] * (max_len - tl)
+            post_tokens["input_ids"].append(new_tokens)
+            post_tokens["attention_mask"].append(attention_mask)
+        return post_tokens
+            
     def process_ds(self, datasets, tokenization_strategy = "first"):
         # Tokenize the datasets
         if tokenization_strategy == 'first':
             tokenized_ds = datasets.map(self.tokenize_function, batched=True)
         elif tokenization_strategy == 'last':
             tokenized_ds = datasets.map(self.tokenizeLast_function, batched=True)
+        elif tokenization_strategy == 'head-tail':
+            tokenized_ds = datasets.map(self.tokenizeHeadTail_function, batched=True)
         else:
             raise ValueError("tokenization_strategy must be either 'first' or 'last'")
 
