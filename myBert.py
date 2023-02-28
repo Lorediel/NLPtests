@@ -1,7 +1,7 @@
 
 import torch
 import torch.nn as nn
-from transformers import ResNetModel, BertModel, AutoTokenizer, AutoImageProcessor, AdamW, get_scheduler
+from transformers import ResNetModel, BertModel, AutoModel,  AutoTokenizer, AutoImageProcessor, AdamW, get_scheduler
 from tqdm.auto import tqdm
 from NLPtests.utils import compute_metrics
 from NLPtests.FakeNewsDataset import collate_fn
@@ -10,15 +10,15 @@ import os
 class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
-        self.bert = BertModel.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
+        self.bert = AutoModel.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
         self.tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
         self.tokenizerLast = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased", padding_side = 'left', truncation_side = 'left')
-        self.linear1 = nn.Linear(512, 512)
-        self.layer_norm = nn.LayerNorm(512)
+        self.linear1 = nn.Linear(768, 768)
+        self.layer_norm = nn.LayerNorm(768)
         self.dropout = nn.Dropout(0.1)
-        self.linear2 = nn.Linear(512, 512)
-        self.layer_norm2 = nn.LayerNorm(512)
-        self.linear3 = nn.Linear(512, 4)
+        self.linear2 = nn.Linear(768, 768)
+        self.layer_norm2 = nn.LayerNorm(768)
+        self.linear3 = nn.Linear(768, 4)
         self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
 
@@ -148,7 +148,6 @@ class BertModel():
 
                 labels_tensor = torch.tensor(labels).to(device)
 
-                nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
                 logits, probs = self.model(
                     input_ids=t_inputs.input_ids,
                     attention_mask=t_inputs.attention_mask
