@@ -23,7 +23,7 @@ class BertModel():
     
     def tokenizeHeadTail_function(self, ds):
         texts = ds['Text']
-        max_len = self.tokenizer.model_max_length
+        max_len = 512
         tokens = self.tokenizer(texts)
         half_len = int(max_len/2)
         post_tokens = {
@@ -52,7 +52,7 @@ class BertModel():
         elif tokenization_strategy == 'head-tail':
             tokenized_ds = datasets.map(self.tokenizeHeadTail_function, batched=True)
         else:
-            raise ValueError("tokenization_strategy must be either 'first' or 'last'")
+            raise ValueError("tokenization_strategy must be either 'first', 'last' or 'head-tail'")
 
         # Rename the columns
         tokenized_ds = tokenized_ds.rename_column("Label", "labels")
