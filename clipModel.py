@@ -24,7 +24,7 @@ class Model(nn.Module):
         #self.layernorm1 = nn.LayerNorm(512*2)
         self.tanh = nn.Tanh()
         self.linear1 = nn.Linear(512*2, 512*2)
-        self.linear2 = nn.Linear(512*2, 512*2)
+        #self.linear2 = nn.Linear(768, 768)
         self.linear3 = nn.Linear(512*2, 4)
         self.relu = nn.ReLU()
         self.layernorm = nn.LayerNorm(512*2)
@@ -61,10 +61,10 @@ class Model(nn.Module):
         embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)
 
-        embeddings = self.linear2(embeddings)
-        embeddings = self.layernorm(embeddings)
-        embeddings = self.dropout(embeddings)
-        embeddings = self.relu(embeddings)
+        #embeddings = self.linear2(embeddings)
+        #embeddings = self.layernorm(embeddings)
+        #embeddings = self.dropout(embeddings)
+        #embeddings = self.relu(embeddings)
 
         logits = self.linear3(embeddings)
         probs = self.softmax(logits)
