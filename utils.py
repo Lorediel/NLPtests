@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import numpy as np
 from torch.utils.data import Dataset, Subset
 import pandas as pd
-from FakeNewsDataset import FakeNewsDataset
+from NLPtests.FakeNewsDataset import FakeNewsDataset
 import collections
 
 
