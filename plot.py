@@ -310,3 +310,23 @@ def plot_bar_bins(data,title):
     plt.xticks(x+width*1.5, ticks)
     plt.show()
 
+if __name__ == "__main__":
+    df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t')
+    df = df.reset_index()
+    min = 100000
+    tweet = None
+    u = None
+    l = None
+    tweets_urls = []
+    for index, row in df.iterrows():
+        id = row["ID"]
+        type = row["Type"]
+        text = row["Text"]
+        label = row["Label"]
+        url = row["URL"]
+        
+        if type == "tweet" and label == 3:
+            print(text)
+            
+
+   
