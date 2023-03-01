@@ -82,7 +82,6 @@ def pil_loader(path: str):
     
 class ClipModel:
     #tokenizer_max_length = 512
-
     
 
     def __init__(self):
@@ -170,7 +169,7 @@ class ClipModel:
 
 
 
-    def train(self, train_ds, eval_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./", tokenization_strategy = "first"):
+    def train(self, train_ds, eval_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, eval_every_epoch= False, num_eval_steps = 10, save_path = "./", tokenization_strategy = "first"):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(device)
 
@@ -225,7 +224,7 @@ class ClipModel:
                 
                 preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
                 loss = criterion(logits, labels)
-                if (current_step % num_eval_steps == 0):
+                if (current_step % num_eval_steps == 0 and eval_every_epoch == False):
                     print("Epoch: ", epoch)
                     print("Loss: ", loss.item())
                     eval_metrics = self.eval(eval_ds, tokenization_strategy, batch_size=batch_size)
@@ -237,6 +236,7 @@ class ClipModel:
                         torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
                     print("Best metric: ", best_metric)
                     self.model.train()
+
                 
 
                 loss.backward()
@@ -244,7 +244,18 @@ class ClipModel:
                 scheduler.step()
                 optimizer.zero_grad()
                 progress_bar.update(1)
-                
+        if eval_every_epoch:
+            print("Epoch: ", epoch)
+            print("Loss: ", loss.item())
+            eval_metrics = self.eval(eval_ds, tokenization_strategy, batch_size=batch_size)
+            print("Eval metrics: ", eval_metrics)
+            f1_score = eval_metrics["f1"]
+            if f1_score > best_metric:
+                print("New best model found")
+                best_metric = f1_score
+                torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
+            print("Best metric: ", best_metric)
+            self.model.train()
         
         return self.model
     
