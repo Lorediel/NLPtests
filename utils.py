@@ -4,7 +4,8 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import numpy as np
 from torch.utils.data import Dataset, Subset
 import pandas as pd
-from NLPtests.FakeNewsDataset import FakeNewsDataset
+from FakeNewsDataset import FakeNewsDataset
+import collections
 
 
 
@@ -125,6 +126,7 @@ def get_train_val_indexes(indexes):
 def get_only_type(dataset, type):
     indexes = []
     for i in range(len(dataset)):
+
         x = dataset[i]
         if (x["type"] == type):
             indexes.append(i)
@@ -159,15 +161,46 @@ def stratified_by_label(dataset):
     
 
 if __name__ == '__main__':
-    ds = FakeNewsDataset("/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv", "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
+    tsv_file = "/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv"
+    dataset = FakeNewsDataset(tsv_file, "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
+    #df = pd.read_csv(tsv_file, sep='\t').drop_duplicates(keep='first', ignore_index=True)
+    # save the dataframe
+    #df.to_csv('MULTI-Fake-Detective_Task1_Data.csv', index=False)
+    # iterate over the rows and print
     
-    tweet_ds  = get_only_type(ds, "tweet")
-    article_ds = get_only_type(ds, "article")
 
-    tweet_train, tweet_validation = stratified_by_label(tweet_ds)
-    article_train, article_validation = stratified_by_label(article_ds)
 
-    print("tweet train: ", len(tweet_train))
-    print("tweet validation: ", len(tweet_validation))
-    print("article train: ", len(article_train))
-    print("article validation: ", len(article_validation))
+    art_ds  = get_only_type(dataset, "article")
+
+    
+    art_t, art_v = stratified_by_label(art_ds)
+    
+    
+    labels_tr = {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0
+    }
+    labels_v = {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0
+    }
+    
+    for i in range(len(art_t)):
+        x = art_t[i]
+        if (x["label"] == 0):
+            print(x["id"])
+                
+    for i in range(len(art_v)):
+        x = art_v[i]
+
+        if (x["label"] == 0):
+            print(x["id"])
+    
+    
+
+   
+

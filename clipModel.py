@@ -22,6 +22,7 @@ class Model(nn.Module):
         
         #self.dropout2 = nn.Dropout(0.2)
         #self.layernorm1 = nn.LayerNorm(512*2)
+        self.tanh = nn.Tanh()
         self.linear1 = nn.Linear(512*2, 768)
         #self.linear2 = nn.Linear(768, 768)
         self.linear3 = nn.Linear(768, 4)
@@ -48,11 +49,12 @@ class Model(nn.Module):
             base += nums_images[i]
         
         embeddings_images = torch.cat(embeddings_images, dim=0)
+        embeddings_images = self.tanh(embeddings_images)
         embeddings = torch.cat((t_embeddings, embeddings_images), dim=1)
 
         #embeddings = self.layernorm1(embeddings)
         #embeddings = self.dropout2(embeddings)
-        embeddings = self.relu(embeddings)
+        #embeddings = self.relu(embeddings)
 
         embeddings = self.linear1(embeddings)
         embeddings = self.layernorm(embeddings)

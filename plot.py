@@ -311,22 +311,21 @@ def plot_bar_bins(data,title):
     plt.show()
 
 if __name__ == "__main__":
-    df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t')
+    tsv_file = "/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv"
+    df = pd.read_csv(tsv_file, sep='\t').drop_duplicates()
+    print(len(df))
+    # Remove rows with the same ID
     df = df.reset_index()
-    min = 100000
-    tweet = None
-    u = None
-    l = None
-    tweets_urls = []
+    ids = []
     for index, row in df.iterrows():
         id = row["ID"]
-        type = row["Type"]
-        text = row["Text"]
-        label = row["Label"]
-        url = row["URL"]
-        
-        if type == "tweet" and label == 3:
-            print(text)
+        ids.append(id)
+    print(len(ids))
+
+    #count duplicate ids
+    import collections
+    print([(item, count) for item, count in collections.Counter(ids).items() if count > 1])
+
             
 
    
