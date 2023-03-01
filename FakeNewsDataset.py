@@ -17,7 +17,6 @@ def pil_loader(path: str):
 class FakeNewsDataset(Dataset):
     def __init__(self, tsv_file, image_dir):
         self.data = pd.read_csv(tsv_file, sep='\t').drop_duplicates(keep="first", ignore_index=True)
-        print(len(self.data))
         self.img_dir = image_dir
 
     def __len__(self):
