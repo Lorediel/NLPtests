@@ -244,18 +244,18 @@ class ClipModel:
                 scheduler.step()
                 optimizer.zero_grad()
                 progress_bar.update(1)
-        if eval_every_epoch:
-            print("Epoch: ", epoch)
-            print("Loss: ", loss.item())
-            eval_metrics = self.eval(eval_ds, tokenization_strategy, batch_size=batch_size)
-            print("Eval metrics: ", eval_metrics)
-            f1_score = eval_metrics["f1"]
-            if f1_score > best_metric:
-                print("New best model found")
-                best_metric = f1_score
-                torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
-            print("Best metric: ", best_metric)
-            self.model.train()
+            if eval_every_epoch:
+                print("Epoch: ", epoch)
+                print("Loss: ", loss.item())
+                eval_metrics = self.eval(eval_ds, tokenization_strategy, batch_size=batch_size)
+                print("Eval metrics: ", eval_metrics)
+                f1_score = eval_metrics["f1"]
+                if f1_score > best_metric:
+                    print("New best model found")
+                    best_metric = f1_score
+                    torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
+                print("Best metric: ", best_metric)
+                self.model.train()
         
         return self.model
     
