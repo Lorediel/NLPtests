@@ -71,7 +71,7 @@ class Model(nn.Module):
         base = 0
         for i in range(len(nums_images)):
             sample_logits = logits[base:base+nums_images[i]]
-            sample_logits = torch.mean(sample_logits, dim=0, keepdim=True)
+            sample_logits, _ = torch.min(sample_logits, dim=0, keepdim=True)
             new_logits.append(sample_logits)
             base += nums_images[i]
         logits = torch.cat(new_logits, dim=0)
