@@ -51,9 +51,9 @@ class GilbertoModel():
     
     def get_tokens(self, texts, tokenization_strategy):
         if tokenization_strategy == "first":
-            return self.model.tokenizer(texts, return_tensors="pt", padding = True, truncation=True)
+            return self.model.tokenizer(texts, return_tensors="pt", padding = True, truncation=True, max_length=512)
         elif tokenization_strategy == "last":
-            return self.model.tokenizerLast(texts, return_tensors="pt", padding = True, truncation=True)
+            return self.model.tokenizerLast(texts, return_tensors="pt", padding = True, truncation=True, max_length=512)
         elif tokenization_strategy == "head-tail":
             max_len = 512
             tokens = self.model.tokenizer(texts)

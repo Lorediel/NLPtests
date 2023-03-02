@@ -101,7 +101,7 @@ class BertModel():
                 texts = batch["text"]
                 labels = batch["label"]
 
-
+                texts = [t.lower() for t in texts]
                 
                 t_inputs = self.get_tokens(texts, tokenization_strategy)
 
