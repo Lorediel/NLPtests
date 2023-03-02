@@ -102,7 +102,7 @@ class ResnetModel():
         return metrics
 
     
-    def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./"):
+    def train(self, train_ds, val_ds, lr = 5e-5, eval_every_epoch= False, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./"):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.train()
         self.model.to(device)
@@ -154,7 +154,7 @@ class ResnetModel():
                 loss = criterion(logits, labels)
 
                 
-                if (current_step % num_eval_steps == 0):
+                if (current_step % num_eval_steps == 0 and eval_every_epoch == False):
                     print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
                     eval_metrics = self.eval(val_ds)
                     print("Eval metrics: ", eval_metrics)
@@ -172,3 +172,14 @@ class ResnetModel():
                 scheduler.step()
                 optimizer.zero_grad()
                 progress_bar.update(1)
+            if eval_every_epoch == True:
+                print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
+                eval_metrics = self.eval(val_ds)
+                print("Eval metrics: ", eval_metrics)
+                f1_score = eval_metrics["f1"]
+                if f1_score > best_metric:
+                    print("New best model found")
+                    best_metric = f1_score
+                    torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
+                print("Best metric: ", best_metric)
+                self.model.train()
