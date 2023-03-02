@@ -254,7 +254,7 @@ def equalObs(x, nbin):
                      np.sort(x))
 
 
-def plot_bar_bins(data,title):
+def plot_bar_bins(data,title, num_bins):
     values_label_0 = data[0]
     values_label_1 = data[1]
     values_label_2 = data[2]
@@ -263,8 +263,7 @@ def plot_bar_bins(data,title):
     total_values = np.array(sorted(values_label_0 + values_label_1 + values_label_2 + values_label_3))
 
     # create 5 bins between the min and max values and put each value in the correct bin
-    bins = equalObs(total_values, 4).astype(int)
-    print(bins)
+    bins = equalObs(total_values, num_bins-1).astype(int)
     ticks = []
     for b in bins:
         tick = ""
@@ -282,10 +281,10 @@ def plot_bar_bins(data,title):
     values_label_3 = np.digitize(values_label_3, bins)
     
 
-    values_label_0 = count_unique(values_label_0, 1, 5)
-    values_label_1 = count_unique(values_label_1, 1, 5)
-    values_label_2 = count_unique(values_label_2, 1, 5)
-    values_label_3 = count_unique(values_label_3, 1, 5)
+    values_label_0 = count_unique(values_label_0, 1, num_bins)
+    values_label_1 = count_unique(values_label_1, 1, num_bins)
+    values_label_2 = count_unique(values_label_2, 1, num_bins)
+    values_label_3 = count_unique(values_label_3, 1, num_bins)
 
     width = 0.2
     # plot the data
@@ -312,7 +311,7 @@ def plot_bar_bins(data,title):
 
 if __name__ == "__main__":
     tsv_file = "/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv"
-    df = pd.read_csv(tsv_file, sep='\t').drop_duplicates()
+    df = pd.read_csv('/Users/lorenzodamico/Desktop/MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates()
     print(len(df))
     # Remove rows with the same ID
     df = df.reset_index()

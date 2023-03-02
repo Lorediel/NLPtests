@@ -26,7 +26,7 @@ class Model(nn.Module):
         #self.layernorm1 = nn.LayerNorm(512*2)
 
         self.linear1 = nn.Linear(1280, 1280)
-        self.linear2 = nn.Linear(1280, 1280)
+        #self.linear2 = nn.Linear(1280, 1280)
         self.linear3 = nn.Linear(1280, 4)
         self.relu = nn.ReLU()
         self.layernorm = nn.LayerNorm(1280)
@@ -62,10 +62,10 @@ class Model(nn.Module):
         embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)
 
-        embeddings = self.linear2(embeddings)
-        embeddings = self.layernorm(embeddings)
-        embeddings = self.dropout(embeddings)
-        embeddings = self.relu(embeddings)
+        #embeddings = self.linear2(embeddings)
+        #embeddings = self.layernorm(embeddings)
+        #embeddings = self.dropout(embeddings)
+        #embeddings = self.relu(embeddings)
 
         logits = self.linear3(embeddings)
         probs = self.softmax(logits)
@@ -171,7 +171,7 @@ class ClipBertModel:
 
 
 
-    def train(self, train_ds, eval_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./", tokenization_strategy = "first"):
+    def train(self, train_ds, eval_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, eval_every_epoch = False, save_path = "./", tokenization_strategy = "first"):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(device)
 
@@ -226,7 +226,7 @@ class ClipBertModel:
                 
                 preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
                 loss = criterion(logits, labels)
-                if (current_step % num_eval_steps == 0):
+                if (current_step % num_eval_steps == 0 and eval_every_epoch == False):
                     print("Epoch: ", epoch)
                     print("Loss: ", loss.item())
                     eval_metrics = self.eval(eval_ds, tokenization_strategy, batch_size=batch_size)
@@ -245,7 +245,18 @@ class ClipBertModel:
                 scheduler.step()
                 optimizer.zero_grad()
                 progress_bar.update(1)
-                
+            if eval_every_epoch == True:
+                print("Epoch: ", epoch)
+                print("Loss: ", loss.item())
+                eval_metrics = self.eval(eval_ds, tokenization_strategy, batch_size=batch_size)
+                print("Eval metrics: ", eval_metrics)
+                f1_score = eval_metrics["f1"]
+                if f1_score > best_metric:
+                    print("New best model found")
+                    best_metric = f1_score
+                    torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
+                print("Best metric: ", best_metric)
+                self.model.train()
         
         return self.model
     
