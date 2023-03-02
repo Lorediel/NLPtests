@@ -41,7 +41,7 @@ class Model(nn.Module):
 
         
 
-        embeddings = self.linear1(embeddings)
+        embeddings = self.linear1(embeddings_images)
         embeddings = self.relu(embeddings)
         embeddings = self.layernorm(embeddings)
         embeddings = self.dropout(embeddings)
