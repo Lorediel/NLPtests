@@ -2,6 +2,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import ast
 
 label_names = {
         0: 'Certainly Fake',
@@ -17,6 +18,10 @@ colors = {
     'blue': '#4281A4'
 }
 
+"""
+------------------ PLOT 1 ------------------
+Distribution of labels
+"""
 def label_distribution():
     df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
     df = df.reset_index()
@@ -48,6 +53,11 @@ def label_distribution():
 
     plt.show()
     return samples_for_label
+
+"""
+------------------ PLOT 2 ------------------
+Distribution of labels for tweets and articles
+"""
 
 def type_label_distribution(type):
     if type != 'tweet' and type != 'article':
@@ -86,7 +96,11 @@ def type_label_distribution(type):
     plt.show()
     return samples_for_label
 
-# Length of the text
+"""
+------------------ PLOT 3 ------------------
+Length of the text
+"""
+
 
 def tweets_articles_lengths_for_labels():
     df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
@@ -242,6 +256,57 @@ def length_bins(num_bins, type):
     plt.xticks(x+width*1.5, ticks)
     plt.show()
 
+"""
+---------------------- PLOT 4  ----------------------
+Number of images per label
+"""
+def avg_images_per_label(type = None):
+    if type != None and type != "tweet" and type != "article":
+        raise ValueError("type must be 'tweet' or 'article'")
+    df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
+    df = df.reset_index()
+
+    samples_label_0 = 0
+    samples_label_1 = 0
+    samples_label_2 = 0
+    samples_label_3 = 0
+
+    num_images_label_0 = 0
+    num_images_label_1 = 0
+    num_images_label_2 = 0
+    num_images_label_3 = 0
+
+    for index, row in df.iterrows():
+        label = row['Label']
+        t = row["Type"]
+        urls = ast.literal_eval(row['Media'])
+        if type != None:
+            if t != type:
+                continue
+        if label == 0:
+            samples_label_0 += 1
+            num_images_label_0 += len(urls)
+        elif label == 1:
+            samples_label_1 += 1
+            num_images_label_1 += len(urls)
+        elif label == 2:
+            samples_label_2 += 1
+            num_images_label_2 += len(urls)
+        elif label == 3:
+            samples_label_3 += 1
+            num_images_label_3 += len(urls)
+
+    #print(str(round(num_images_label_0/samples_label_0, 3)) + "\t" + str(round(num_images_label_1/samples_label_1, 3)) + "\t" + str(round(num_images_label_2/samples_label_2, 3)) + "\t" + str(round(num_images_label_3/samples_label_3, 3)))
+    
+    print("Label 0: ", num_images_label_0/samples_label_0)
+    print("Label 1: ", num_images_label_1/samples_label_1)
+    print("Label 2: ", num_images_label_2/samples_label_2)
+    print("Label 3: ", num_images_label_3/samples_label_3)
+    
+
     
 if __name__ == "__main__":
-    length_bins(5, "tweet")
+    avg_images_per_label()
+    avg_images_per_label("tweet")
+    avg_images_per_label("article")
+
