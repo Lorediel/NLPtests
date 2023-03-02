@@ -11,7 +11,7 @@ class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
         self.bert = AutoModel.from_pretrained("dbmdz/bert-base-italian-xxl-uncased")
-        self.tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-unased")
+        self.tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-uncased")
         self.tokenizerLast = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-uncased", padding_side = 'left', truncation_side = 'left')
         self.linear1 = nn.Linear(768, 768)
         self.layer_norm = nn.LayerNorm(768)
