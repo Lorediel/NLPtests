@@ -31,7 +31,7 @@ class Model(nn.Module):
         self.dropout = nn.Dropout(0.1)
         self.softmax = nn.Softmax(dim=1)
 
-    def forward(self, input_ids, attention_mask, pixel_values, nums_images):
+    def forward(self, input_ids, attention_mask, pixel_values):
         
         t_embeddings = self.base_model.get_text_features(
             input_ids=input_ids, attention_mask=attention_mask
@@ -172,8 +172,7 @@ class ClipModel:
                 logits, probs = self.model(
                     input_ids=t_inputs["input_ids"],
                     attention_mask=t_inputs["attention_mask"],
-                    pixel_values=i_inputs.pixel_values,
-                    nums_images = nums_images,
+                    pixel_values=i_inputs.pixel_values
                 )
 
                 preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
@@ -219,8 +218,21 @@ class ClipModel:
                 labels = batch["label"]
                 nums_images = batch["nums_images"]
 
+
+                random_images_list = []
+                base = 0
+                for i in range(len(nums_images)):
+                    if nums_images[i] == 1:
+                        random_images_list.append(images_list[base])
+                        base += nums_images[i]
+                        continue
+                    random_index = random.randint(0, nums_images[i]-1)
+                    sublist = images_list[base:base+nums_images[i]]
+                    random_images_list.append(sublist[random_index])
+                    base += nums_images[i]
+
                 t_inputs = self.get_tokens(texts, tokenization_strategy)
-                i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
+                i_inputs = self.model.processor(images = random_images_list, return_tensors="pt", padding=True)
                 
                 for k, v in t_inputs.items():
                     t_inputs[k] = v.to(device)
@@ -232,8 +244,7 @@ class ClipModel:
                 outputs = self.model(
                     input_ids=t_inputs["input_ids"],
                     attention_mask=t_inputs["attention_mask"],
-                    pixel_values=i_inputs.pixel_values,
-                    nums_images = nums_images,
+                    pixel_values=i_inputs.pixel_values
                 )
                 
                 logits = outputs[0]
