@@ -167,6 +167,10 @@ class Model(nn.Module):
                 # output boxes, masks, scores, etc
                 pred_instances = model._postprocess(pred_instances, inputs,
                                                     images.image_sizes)  # scale box to orig size
+                
+                for i in range(len(pred_inds)):
+                  if pred_inds[i].nelement() == 0:
+                    pred_inds[i] = torch.tensor([0]).to("cuda")
                 # features of the proposed boxes
                 feats = box_features[pred_inds]
                 visual_embeds.append(feats)
