@@ -56,24 +56,24 @@ class Model(nn.Module):
 
         self.relu = nn.ReLU()
         self.linear1 = nn.Sequential(
-            nn.Linear(2816, 2816),
-            nn.LayerNorm(2816),
+            nn.Linear(3072, 3072),
+            nn.LayerNorm(3072),
             nn.Dropout(0.2),
             nn.ReLU(),
         )
         self.linear2 = nn.Sequential(
-            nn.Linear(2816, 2816),
-            nn.LayerNorm(2816),
+            nn.Linear(3072, 3072),
+            nn.LayerNorm(3072),
             nn.Dropout(0.2),
             nn.ReLU(),
         )
         self.linear3 = nn.Sequential(
-            nn.Linear(2816, 2816),
-            nn.LayerNorm(2816),
+            nn.Linear(3072, 3072),
+            nn.LayerNorm(3072),
             nn.Dropout(0.1),
             nn.ReLU(),
         )
-        self.linear4 = nn.Linear(2816, 4)
+        self.linear4 = nn.Linear(3072, 4)
 
         self.softmax = nn.Softmax(dim=1)
             
@@ -131,7 +131,7 @@ class Model(nn.Module):
 
     def calculate_feats_patches(self, model, x_image):
         visual_embeds = []
-
+        model.eval()
         inputs = []
         for pil_img in x_image:
             #convert PIL image to cv image
@@ -223,7 +223,7 @@ class Concatenated_Model():
                     i_inputs[k] = v.to(device)
 
                 outputs = self.model(
-                    images = images_list,
+                    images = random_images_list,
                     input_ids = t_inputs.input_ids,
                     attention_mask = t_inputs.attention_mask,
                     pixel_values = i_inputs.pixel_values
@@ -294,7 +294,7 @@ class Concatenated_Model():
                     i_inputs[k] = v.to(device)
                 
                 outputs = self.model(
-                    images = images_list,
+                    images = random_images_list,
                     input_ids = t_inputs.input_ids,
                     attention_mask = t_inputs.attention_mask,
                     pixel_values = i_inputs.pixel_values
@@ -302,6 +302,7 @@ class Concatenated_Model():
                 
                 
                 logits = outputs[0]
+                labels = torch.tensor(labels).to(device)
                 preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
                 loss = criterion(logits, labels)
                 metrics = compute_metrics(labels, preds)
