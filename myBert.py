@@ -22,10 +22,13 @@ class Model(nn.Module):
         self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
 
-    def forward(self, input_ids, attention_mask):
+    def forward(self, input_ids, attention_mask, only_cls = False):
         
         #textual embeddings extraction from bert
-        embeddings_text = self.bert(input_ids = input_ids, attention_mask = attention_mask).pooler_output
+        if only_cls:
+            embeddings_text = self.bert(input_ids = input_ids, attention_mask = attention_mask).last_hidden_state[:,0,:]
+        else:
+            embeddings_text = self.bert(input_ids = input_ids, attention_mask = attention_mask).pooler_output
 
         embeddings = self.linear1(embeddings_text)
         embeddings = self.layer_norm(embeddings)
@@ -87,7 +90,7 @@ class BertModel():
             raise ValueError(f"tokenization_strategy {tokenization_strategy} not supported")
         
     
-    def eval(self, ds, tokenization_strategy, batch_size = 8):
+    def eval(self, ds, tokenization_strategy, batch_size = 8, only_cls = False):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.eval()
         dataloader = torch.utils.data.DataLoader(
@@ -111,6 +114,7 @@ class BertModel():
                 logits, probs = self.model(
                     input_ids=t_inputs["input_ids"],
                     attention_mask=t_inputs["attention_mask"],
+                    only_cls = only_cls
                 )
 
                 preds = torch.argmax(logits, dim=1).tolist()
@@ -120,7 +124,7 @@ class BertModel():
         metrics = compute_metrics(total_labels, total_preds)
         return metrics
     
-    def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, eval_every_epoch = False, warmup_steps = 0, num_eval_steps = 10, save_path = "./", tokenization_strategy = "first"):
+    def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, eval_every_epoch = False, warmup_steps = 0, num_eval_steps = 10, save_path = "./", tokenization_strategy = "first", only_cls = False):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.train()
         self.model.to(device)
@@ -159,14 +163,15 @@ class BertModel():
 
                 logits, probs = self.model(
                     input_ids=t_inputs["input_ids"],
-                    attention_mask=t_inputs["attention_mask"]
+                    attention_mask=t_inputs["attention_mask"],
+                    only_cls = only_cls
                 )
 
                 loss = criterion(logits, labels_tensor)
 
                 if (current_step % num_eval_steps == 0 and eval_every_epoch == False):
                     print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
-                    eval_metrics = self.eval(val_ds, tokenization_strategy, batch_size = batch_size)
+                    eval_metrics = self.eval(val_ds, tokenization_strategy, batch_size = batch_size, only_cls = only_cls)
                     print("Eval metrics: ", eval_metrics)
                     f1_score = eval_metrics["f1"]
                     if f1_score > best_metric:
@@ -184,7 +189,7 @@ class BertModel():
                 progress_bar.update(1)
             if (eval_every_epoch == True):
                 print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
-                eval_metrics = self.eval(val_ds, tokenization_strategy, batch_size = batch_size)
+                eval_metrics = self.eval(val_ds, tokenization_strategy, batch_size = batch_size, only_cls = only_cls)
                 print("Eval metrics: ", eval_metrics)
                 f1_score = eval_metrics["f1"]
                 if f1_score > best_metric:
