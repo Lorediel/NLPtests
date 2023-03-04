@@ -1,4 +1,3 @@
-from NLPtests.imagePreProcessing_2 import ImagePreProcessing as ImgPreProc
 import torch
 from transformers import AdamW, get_scheduler, AutoProcessor, VisionTextDualEncoderModel, AutoTokenizer, BertModel, AdamW, get_scheduler
 from transformers import VisionEncoderDecoderModel, ViTFeatureExtractor, AutoTokenizer
@@ -8,51 +7,14 @@ from tqdm.auto import tqdm
 import os
 from NLPtests.utils import compute_metrics
 
-def parts(a, b):
-    q, r = divmod(a, b)
-    return [q + 1] * r + [q] * (b - r)
-
-def get_visual_embeds(imagesLists, nums_images):
-    total_length = len(imagesLists)
-    imgPreProc = ImgPreProc()
-    converted_images = imgPreProc.convertToBGR(imagesLists)
-    images, batched_inputs = imgPreProc.prepare_image_inputs(converted_images)
-    features = imgPreProc.get_features(images)
-    proposals = imgPreProc.get_proposals(images, features)
-    box_features, features_list = imgPreProc.get_box_features(features, proposals, total_length)
-    pred_class_logits, pred_proposal_deltas = imgPreProc.get_prediction_logits(features_list, proposals)
-    boxes, scores, image_shapes = imgPreProc.get_box_scores(pred_class_logits, pred_proposal_deltas, proposals)
-    output_boxes = [imgPreProc.get_output_boxes(boxes[i], batched_inputs[i], proposals[i].image_size) for i in range(len(proposals))]
-    temp = [imgPreProc.select_boxes(output_boxes[i], scores[i]) for i in range(len(scores))]
-    keep_boxes, max_conf = [],[]
-    for keep_box, mx_conf in temp:
-        keep_boxes.append(keep_box)
-        max_conf.append(mx_conf)
-    MIN_BOXES=100
-    MAX_BOXES=100
-    keep_boxes = [imgPreProc.filter_boxes(keep_box, mx_conf, MIN_BOXES, MAX_BOXES) for keep_box, mx_conf in zip(keep_boxes, max_conf)]
-    visual_embeds = [imgPreProc.get_visual_embeds(box_feature, keep_box) for box_feature, keep_box in zip(box_features, keep_boxes)]
-    """
-    k= 0
-    MAX_BOXES = 100
-    final_visual_embeds = []
-    i=0
-    for l in imagesLists:
-        #number of images associated
-        b = nums_images[k].item()
-        k+=1
-        p = parts(MAX_BOXES, b)
-        #visual embeds for the images of the same row
-        current_ve = visual_embeds[i:i+b]
-        j=0
-        new_ves = []
-        for tensor in current_ve:
-            new_ves.append(tensor[:p[j], :])
-            j+=1
-        new_ves = torch.cat(new_ves, 0)
-        final_visual_embeds.append(new_ves)
-    """
-    return final_visual_embeds
+import cv2
+from detectron2 import model_zoo
+from detectron2.checkpoint import DetectionCheckpointer
+from detectron2.config import get_cfg
+from detectron2.modeling import build_model
+from transformers import VisualBertModel
+from detectron2.utils.visualizer import Visualizer
+from detectron2.data import MetadataCatalog, DatasetCatalog
 
 
 
@@ -66,7 +28,20 @@ class Model(nn.Module):
         self.clipTokenizer = AutoTokenizer.from_pretrained("clip-italian/clip-italian")
 
         # Detectron patch embeddings
-        self.patch_embeddings = get_visual_embeds
+        self.patch_embeddings = self.calculate_feats_patches
+
+        cfg_maskr_coco = "COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"
+        cfg_path = cfg_maskr_coco
+        cfg = get_cfg()
+        cfg.merge_from_file(model_zoo.get_config_file(cfg_path))
+        cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # ROI HEADS SCORE THRESHOLD
+        # cfg['MODEL']['DEVICE'] = 'cpu' # if you are not using cuda
+        cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(cfg_path)
+
+        self.maskr_coco = build_model(cfg)
+        checkpointer = DetectionCheckpointer(self.maskr_coco)  # load weights
+        checkpointer.load(cfg.MODEL.WEIGHTS)
+        self.maskr_coco.eval()
 
         # image captioning
         self.vit = VisionEncoderDecoderModel.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
@@ -163,6 +138,43 @@ class Model(nn.Module):
         probs = self.softmax(logits)
         return logits, probs
 
+    def calculate_feats_patches(self, model, x_image):
+        visual_embeds = []
+
+        inputs = []
+        for path in x_image:
+            image = cv2.imread(path)
+            height, width = image.shape[:2]
+            image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
+            inputs.append({"image": image, "height": height, "width": width})
+
+        with torch.no_grad():
+            images = model.preprocess_image(inputs)  # don't forget to preprocess
+            features = model.backbone(images.tensor)  # set of cnn features
+            proposals, _ = model.proposal_generator(images, features, None)  # RPN
+
+            for i in range(len(proposals)):
+                # features_ = [torch.stack([features[f][i]]) for f in model.roi_heads.box_in_features]
+                features_single = {}
+                features_ = []
+                for f in model.roi_heads.box_in_features:
+                    tensor = torch.stack([features[f][i]])
+                    features_.append(tensor)
+                    features_single[f] = tensor
+
+                box_features = model.roi_heads.box_pooler(features_, [proposals[i].proposal_boxes])
+                box_features = model.roi_heads.box_head(box_features)  # features of all 1k candidates
+                predictions = model.roi_heads.box_predictor(box_features)
+                pred_instances, pred_inds = model.roi_heads.box_predictor.inference(predictions, [proposals[i]])
+                pred_instances = model.roi_heads.forward_with_given_boxes(features_single, pred_instances)
+                # output boxes, masks, scores, etc
+                pred_instances = model._postprocess(pred_instances, inputs,
+                                                    images.image_sizes)  # scale box to orig size
+                # features of the proposed boxes
+                feats = box_features[pred_inds]
+                visual_embeds.append(feats)
+
+        return pred_instances, visual_embeds
 
 
 

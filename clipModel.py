@@ -8,7 +8,7 @@ import os
 from tqdm.auto import tqdm
 from NLPtests.utils import *
 from NLPtests.FakeNewsDataset import collate_fn
-
+import random
 
 
 class Model(nn.Module):
@@ -40,6 +40,7 @@ class Model(nn.Module):
         i_embeddings = self.base_model.get_image_features(pixel_values = pixel_values)
 
         #compute the max of the emnbeddings
+        """
         embeddings_images = []
         base = 0
         for i in range(len(nums_images)):
@@ -47,9 +48,10 @@ class Model(nn.Module):
             max_tensor, _ = torch.max(tensor, dim=0, keepdim=True)
             embeddings_images.append(max_tensor)
             base += nums_images[i]
+        """
         
-        embeddings_images = torch.cat(embeddings_images, dim=0)
-        embeddings_images = self.tanh(embeddings_images)
+        #embeddings_images = torch.cat(embeddings_images, dim=0)
+        embeddings_images = self.tanh(i_embeddings)
         embeddings = torch.cat((t_embeddings, embeddings_images), dim=1)
 
         #embeddings = self.layernorm1(embeddings)
@@ -143,11 +145,23 @@ class ClipModel:
                 images_list = batch["images"]
                 labels = batch["label"]
                 nums_images = batch["nums_images"]
-                
+
+                random_images_list = []
+                base = 0
+                for i in range(len(nums_images)):
+                    if nums_images[i] == 1:
+                        random_images_list.append(images_list[base])
+                        base += nums_images[i]
+                        continue
+                    random_index = random.randint(0, nums_images[i]-1)
+                    sublist = images_list[base:base+nums_images[i]]
+                    random_images_list.append(sublist[random_index])
+                    base += nums_images[i]
+                        
                 
                 #t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True, truncation=True)
                 t_inputs = self.get_tokens(texts, tokenization_strategy)
-                i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
+                i_inputs = self.model.processor(images = random_images_list, return_tensors="pt", padding=True)
                 
                 for k, v in t_inputs.items():
                     t_inputs[k] = v.to(device)
