@@ -302,11 +302,226 @@ def avg_images_per_label(type = None):
     print("Label 1: ", num_images_label_1/samples_label_1)
     print("Label 2: ", num_images_label_2/samples_label_2)
     print("Label 3: ", num_images_label_3/samples_label_3)
+
+# average percentage of capital letters per label
+def count_letters_df(type = None):
+    if type != None and type != "tweet" and type != "article":
+        raise ValueError("type must be 'tweet' or 'article'")
+    df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
+    df = df.reset_index()
+
+    # use computer modern font
+    plt.rcParams['mathtext.fontset'] = 'cm'
+    plt.rcParams['font.family'] = 'STIXGeneral'
+
+    # increase font size
+    plt.rcParams.update({'font.size': 18})
+
+    samples_label_0 = 0
+    samples_label_1 = 0
+    samples_label_2 = 0
+    samples_label_3 = 0
+
+    percent_capital_letters_label_0 = 0
+    percent_capital_letters_label_1 = 0
+    percent_capital_letters_label_2 = 0
+    percent_capital_letters_label_3 = 0
+
+    for index, row in df.iterrows():
+        text = row['Text']
+        num_letters = len(text)
+        num_capital_letters = count_capital_letters(text)
+        label = row['Label']
+        t = row["Type"]
+        percent_capital_letters = num_capital_letters/num_letters
+        if type != None:
+            if t != type:
+                continue
+        if label == 0:
+            samples_label_0 += 1
+            percent_capital_letters_label_0 += percent_capital_letters
+        elif label == 1:
+            samples_label_1 += 1
+            percent_capital_letters_label_1 += percent_capital_letters
+        elif label == 2:
+            samples_label_2 += 1
+            percent_capital_letters_label_2 += percent_capital_letters
+        elif label == 3:
+            samples_label_3 += 1
+            percent_capital_letters_label_3 += percent_capital_letters
+
+    vals_for_label = {
+        0: round(percent_capital_letters_label_0/samples_label_0, 3),
+        1: round(percent_capital_letters_label_1/samples_label_1, 3),
+        2: round(percent_capital_letters_label_2/samples_label_2, 3),
+        3: round(percent_capital_letters_label_3/samples_label_3, 3)
+    }
     
+    ax = plt.gca()
+    ymax = max(vals_for_label.values())
+    ax.set_ylim([0, ymax + 0.05])
+    
+    if type == None:
+        plt.title("Average percentage of capital letters per label")
+    else:
+        plt.title("Average percentage of capital letters per label (" + type + ")")
+    barplot = plt.bar(label_names.values(), vals_for_label.values(), color=[colors['red'], colors['yellow'], colors['green'], colors['blue']])
+    plt.bar_label(barplot)
+
+    plt.show()
+
+# percentage of capital letters per label considering total text
+
+def count_letters_df2(type = None):
+    if type != None and type != "tweet" and type != "article":
+        raise ValueError("type must be 'tweet' or 'article'")
+    df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
+    df = df.reset_index()
+
+    total_letters_label_0 = 0
+    total_letters_label_1 = 0
+    total_letters_label_2 = 0
+    total_letters_label_3 = 0
+
+    total_capital_letters_label_0 = 0
+    total_capital_letters_label_1 = 0
+    total_capital_letters_label_2 = 0
+    total_capital_letters_label_3 = 0
+
+
+    for index, row in df.iterrows():
+        text = row['Text']
+        num_letters = len(text)
+        num_capital_letters = count_capital_letters(text)
+        label = row['Label']
+        t = row["Type"]
+        if type != None:
+            if t != type:
+                continue
+        if label == 0:
+            total_letters_label_0 += num_letters
+            total_capital_letters_label_0 += num_capital_letters
+        elif label == 1:
+            total_letters_label_1 += num_letters
+            total_capital_letters_label_1 += num_capital_letters
+            
+        elif label == 2:
+            total_letters_label_2 += num_letters
+            total_capital_letters_label_2 += num_capital_letters
+            
+        elif label == 3:
+            total_letters_label_3 += num_letters
+            total_capital_letters_label_3 += num_capital_letters
+
+    vals_for_label = {
+        0: round(total_capital_letters_label_0/total_letters_label_0,3),
+        1: round(total_capital_letters_label_1/total_letters_label_1,3),
+        2: round(total_capital_letters_label_2/total_letters_label_2,3),
+        3: round(total_capital_letters_label_3/total_letters_label_3,3)
+    }
+
+    return vals_for_label
+
+            
+def count_capital_letters(text):
+    count = 0
+    for c in text:
+        if c.isupper():
+            count += 1
+    return count
+
+def plot_scatter_length_capital(t = None):
+    if t != None and t != "tweet" and t != "article":
+        raise ValueError("t must be 'tweet' or 'article'")
+    df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
+    df = df.reset_index()
+
+    len_texts_label_0 = []
+    len_texts_label_1 = []
+    len_texts_label_2 = []
+    len_texts_label_3 = []
+
+    percent_capital_letters_label_0 = []
+    percent_capital_letters_label_1 = []
+    percent_capital_letters_label_2 = []
+    percent_capital_letters_label_3 = []
 
     
+    
+    for index, rows in df.iterrows():
+        if t != None:
+            if rows["Type"] != t:
+                continue
+        label = rows["Label"]
+        text = rows["Text"]
+        if label == 0:
+            len_texts_label_0.append(len(text))
+            num_capital_letters = count_capital_letters(text)
+            percent_capital_letters_label_0.append(num_capital_letters/len(text))
+        elif label == 1:
+            len_texts_label_1.append(len(text))
+            num_capital_letters = count_capital_letters(text)
+            percent_capital_letters_label_1.append(num_capital_letters/len(text))
+        elif label == 2:
+            len_texts_label_2.append(len(text))
+            num_capital_letters = count_capital_letters(text)
+            percent_capital_letters_label_2.append(num_capital_letters/len(text))
+        elif label == 3:
+            len_texts_label_3.append(len(text))
+            num_capital_letters = count_capital_letters(text)
+            percent_capital_letters_label_3.append(num_capital_letters/len(text))
+
+    len_texts = [len_texts_label_0, len_texts_label_1, len_texts_label_2, len_texts_label_3]
+    percent_capital_letters = [percent_capital_letters_label_0, percent_capital_letters_label_1, percent_capital_letters_label_2, percent_capital_letters_label_3]
+    colors = ["#C1666B", "#D4B483", "#48A9A6", "#4281A4"]
+    plt.title("Text length against Percentage of capital letters per label" + (" (" + t + ")" if t != None else ""))
+    for i in range(4):
+        plt.scatter(len_texts[i], percent_capital_letters[i], label=label_names[i], color=colors[i])
+    plt.xlabel("Length of text")
+    plt.ylabel("Percent of capital letters")
+    plt.legend()
+    plt.show()  
+    
 if __name__ == "__main__":
-    avg_images_per_label()
-    avg_images_per_label("tweet")
-    avg_images_per_label("article")
+    df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
+    df = df.reset_index()
+
+    texts  = []
+    texts_urls = []
+    duplicated_urls = []
+    duplicates = []
+    labels = []
+    duplicated_labels = []
+    for i, rows in df.iterrows():
+        t = rows["Text"][:100]
+        u = rows["URL"]
+        
+        if t in texts:
+            duplicates.append(t)
+            duplicated_urls.append(u)
+            # find index of duplicate in texts
+            index = texts.index(t)
+            # get url of duplicate
+            url = texts_urls[index]
+            # get label of duplicate
+            label = labels[index]
+            duplicated_labels.append(label)
+
+            # print duplicate and url
+            print("Duplicate: " + t)
+            print("URL: " + u)
+            print("Duplicate URL: " + url)
+            print("")
+            
+        else:
+            texts.append(t)
+            texts_urls.append(u)
+            labels.append(rows["Label"])
+    print("Number of duplicates: " + str(len(duplicates)))
+
+
+
+
+
+
 

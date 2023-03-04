@@ -32,6 +32,7 @@ def get_visual_embeds(imagesLists, nums_images):
     MAX_BOXES=100
     keep_boxes = [imgPreProc.filter_boxes(keep_box, mx_conf, MIN_BOXES, MAX_BOXES) for keep_box, mx_conf in zip(keep_boxes, max_conf)]
     visual_embeds = [imgPreProc.get_visual_embeds(box_feature, keep_box) for box_feature, keep_box in zip(box_features, keep_boxes)]
+    """
     k= 0
     MAX_BOXES = 100
     final_visual_embeds = []
@@ -50,7 +51,7 @@ def get_visual_embeds(imagesLists, nums_images):
             j+=1
         new_ves = torch.cat(new_ves, 0)
         final_visual_embeds.append(new_ves)
-    
+    """
     return final_visual_embeds
 
 
@@ -66,7 +67,6 @@ class Model(nn.Module):
 
         # Detectron patch embeddings
         self.patch_embeddings = get_visual_embeds
-
 
         # image captioning
         self.vit = VisionEncoderDecoderModel.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
