@@ -49,31 +49,31 @@ class Model(nn.Module):
         self.captionTokenizer = AutoTokenizer.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
 
         # bert
-        self.bert = BertModel.from_pretrained("bert-large-uncased")
-        self.bertTokenizer = AutoTokenizer.from_pretrained("bert-large-uncased")
-        self.bertTokenizerLast = AutoTokenizer.from_pretrained("bert-large-uncased", padding_side = 'left', truncation_side = 'left')
+        self.bert = BertModel.from_pretrained("bert-base-uncased")
+        self.bertTokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+        self.bertTokenizerLast = AutoTokenizer.from_pretrained("bert-base-uncased", padding_side = 'left', truncation_side = 'left')
 
 
         self.relu = nn.ReLU()
         self.linear1 = nn.Sequential(
-            nn.Linear(3072, 3072),
-            nn.LayerNorm(3072),
+            nn.Linear(2816, 2816),
+            nn.LayerNorm(2816),
             nn.Dropout(0.2),
             nn.ReLU(),
         )
         self.linear2 = nn.Sequential(
-            nn.Linear(3072, 3072),
-            nn.LayerNorm(3072),
+            nn.Linear(2816, 2816),
+            nn.LayerNorm(2816),
             nn.Dropout(0.2),
             nn.ReLU(),
         )
         self.linear3 = nn.Sequential(
-            nn.Linear(3072, 3072),
-            nn.LayerNorm(3072),
+            nn.Linear(2816, 2816),
+            nn.LayerNorm(2816),
             nn.Dropout(0.1),
             nn.ReLU(),
         )
-        self.linear4 = nn.Linear(3072, 4)
+        self.linear4 = nn.Linear(2816, 4)
 
         self.softmax = nn.Softmax(dim=1)
             
