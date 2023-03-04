@@ -103,17 +103,21 @@ class Model(nn.Module):
         
         
         # Take the image captions 
-        pixel_values = self.feature_extractor(images=images, return_tensors="pt").pixel_values
-        pixel_values = pixel_values.to(device)
-        output_ids = self.vit.generate(pixel_values=pixel_values)
-        preds = self.captionTokenizer.batch_decode(output_ids, skip_special_tokens=True)
-        captions = [pred.strip() for pred in preds]
+        self.vit.eval()
+        self.bert.eval()
+        with torch.no_grad():
+            pixel_values = self.feature_extractor(images=images, return_tensors="pt").pixel_values
+            pixel_values = pixel_values.to(device)
+            
+            output_ids = self.vit.generate(pixel_values=pixel_values)
+            preds = self.captionTokenizer.batch_decode(output_ids, skip_special_tokens=True)
+            captions = [pred.strip() for pred in preds]
 
-        t_inputs = self.bertTokenizer(captions, padding=True, truncation=True, return_tensors="pt")
-        input_ids = t_inputs.input_ids.to(device)
-        attention_mask = t_inputs.attention_mask.to(device)
-        caption_embeddings = self.bert(input_ids = input_ids, attention_mask = attention_mask).last_hidden_state[:,0,:] # caption_embeddings.shape = (batch_size, 768)
-        
+            t_inputs = self.bertTokenizer(captions, padding=True, truncation=True, return_tensors="pt")
+            input_ids = t_inputs.input_ids.to(device)
+            attention_mask = t_inputs.attention_mask.to(device)
+            caption_embeddings = self.bert(input_ids = input_ids, attention_mask = attention_mask).last_hidden_state[:,0,:] # caption_embeddings.shape = (batch_size, 768)
+            
 
 
         # Concatenate the embeddings
@@ -122,8 +126,8 @@ class Model(nn.Module):
 
         final_embeddings = self.relu(final_embeddings)
         final_embeddings = self.linear1(final_embeddings)
-        final_embeddings = self.linear2(final_embeddings)
-        final_embeddings = self.linear3(final_embeddings)
+        #final_embeddings = self.linear2(final_embeddings)
+        #final_embeddings = self.linear3(final_embeddings)
         final_embeddings = self.linear4(final_embeddings)
         logits = final_embeddings
         probs = self.softmax(logits)
@@ -185,7 +189,7 @@ class Concatenated_Model():
             raise ValueError(f"tokenization_strategy {tokenization_strategy} not supported")
 
         
-    def eval(self, ds, batch_size = 8, tokenization_strategy="first" ):
+    def eval(self, ds,tokenization_strategy="first", batch_size = 8 ):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.eval()
         dataloader = torch.utils.data.DataLoader(
@@ -240,7 +244,7 @@ class Concatenated_Model():
                 
 
     
-    def train(self, train_ds, eval_ds, batch_size = 8, num_epochs = 3, lr = 1e-5, warmup_steps = 0, tokenization_strategy="first", save_path = "./"):
+    def train(self, train_ds, eval_ds, batch_size = 8, num_epochs = 3, num_eval_steps = 10,lr = 1e-5, warmup_steps = 0, tokenization_strategy="first", save_path = "./"):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(device)
         dataloader = torch.utils.data.DataLoader(
@@ -301,12 +305,24 @@ class Concatenated_Model():
                 )
                 
                 
+                
                 logits = outputs[0]
                 labels = torch.tensor(labels).to(device)
-                preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
                 loss = criterion(logits, labels)
-                metrics = compute_metrics(labels, preds)
                 
+
+                if (current_step % num_eval_steps == 0):
+                    print("Epoch: ", epoch)
+                    print("Loss: ", loss.item())
+                    eval_metrics = self.eval(eval_ds, tokenization_strategy, batch_size=batch_size)
+                    print("Eval metrics: ", eval_metrics)
+                    f1_score = eval_metrics["f1"]
+                    if f1_score > best_metric:
+                        print("New best model found")
+                        best_metric = f1_score
+                        torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
+                    print("Best metric: ", best_metric)
+                    self.model.train()
                 loss.backward()
                 optimizer.step()
                 scheduler.step()
@@ -315,7 +331,7 @@ class Concatenated_Model():
                 current_step += 1
             print("Epoch: ", epoch)
             print("Loss: ", loss.item())
-            eval_metrics = self.eval(eval_ds, batch_size=batch_size, tokenization_strategy= tokenization_strategy )
+            eval_metrics = self.eval(eval_ds, tokenization_strategy= tokenization_strategy, batch_size=batch_size)
             print("Eval metrics: ", eval_metrics)
             f1_score = eval_metrics["f1"]
             if f1_score > best_metric:
