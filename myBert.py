@@ -27,6 +27,7 @@ class Model(nn.Module):
         #textual embeddings extraction from bert
         if only_cls:
             embeddings_text = self.bert(input_ids = input_ids, attention_mask = attention_mask).last_hidden_state[:,0,:]
+            embeddings_text = self.relu(embeddings_text)
         else:
             embeddings_text = self.bert(input_ids = input_ids, attention_mask = attention_mask).pooler_output
 

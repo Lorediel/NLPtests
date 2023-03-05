@@ -6,7 +6,7 @@ from torch.utils.data import Dataset, Subset
 import pandas as pd
 from NLPtests.FakeNewsDataset import FakeNewsDataset
 import collections
-
+import random
 
 
 def splitTrainTestVal2(filepath, dataset, delete_date = False):
@@ -110,6 +110,8 @@ def stratifiedSplit(dataset):
         t_i, v_i = get_train_val_indexes(v)
         train_indexes += t_i
         validation_indexes += v_i
+    random.Random(64).shuffle(train_indexes)
+    random.Random(64).shuffle(validation_indexes)
     train_dataset = Subset(dataset, train_indexes)
     validation_dataset = Subset(dataset, validation_indexes)
     return train_dataset, validation_dataset
@@ -163,44 +165,6 @@ def stratified_by_label(dataset):
 if __name__ == '__main__':
     tsv_file = "/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv"
     dataset = FakeNewsDataset(tsv_file, "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
-    #df = pd.read_csv(tsv_file, sep='\t').drop_duplicates(keep='first', ignore_index=True)
-    # save the dataframe
-    #df.to_csv('MULTI-Fake-Detective_Task1_Data.csv', index=False)
-    # iterate over the rows and print
-    
-
-
-    art_ds  = get_only_type(dataset, "article")
-
-    
-    art_t, art_v = stratified_by_label(art_ds)
-    
-    
-    labels_tr = {
-        "0": 0,
-        "1": 0,
-        "2": 0,
-        "3": 0
-    }
-    labels_v = {
-        "0": 0,
-        "1": 0,
-        "2": 0,
-        "3": 0
-    }
-    
-    for i in range(len(art_t)):
-        x = art_t[i]
-        if (x["label"] == 0):
-            print(x["id"])
-                
-    for i in range(len(art_v)):
-        x = art_v[i]
-
-        if (x["label"] == 0):
-            print(x["id"])
-    
-    
-
+    train_dataset, validation_dataset = stratifiedSplit(dataset)
    
 

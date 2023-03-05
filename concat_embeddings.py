@@ -195,6 +195,7 @@ class Concatenated_Model():
         
     def eval(self, ds,tokenization_strategy="first", batch_size = 8 ):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.model.to(device)
         self.model.eval()
         dataloader = torch.utils.data.DataLoader(
             ds, batch_size=batch_size, collate_fn = collate_fn
@@ -240,6 +241,7 @@ class Concatenated_Model():
                 logits = outputs[0]
 
                 preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
+                
                 total_preds += list(preds)
                 total_labels += list(labels)
                 progress_bar.update(1)
@@ -315,18 +317,6 @@ class Concatenated_Model():
                 loss = criterion(logits, labels)
                 
 
-                if (current_step % num_eval_steps == 0):
-                    print("Epoch: ", epoch)
-                    print("Loss: ", loss.item())
-                    eval_metrics = self.eval(eval_ds, tokenization_strategy, batch_size=batch_size)
-                    print("Eval metrics: ", eval_metrics)
-                    f1_score = eval_metrics["f1"]
-                    if f1_score > best_metric:
-                        print("New best model found")
-                        best_metric = f1_score
-                        torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
-                    print("Best metric: ", best_metric)
-                    self.model.train()
                 loss.backward()
                 optimizer.step()
                 scheduler.step()
