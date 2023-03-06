@@ -75,7 +75,7 @@ class BertParts(nn.Module):
     self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
   def forward(self, texts):
-    tokens_list = self.tokenizer(texts).input_ids.to(self.device)
+    tokens_list = self.tokenizer(texts).input_ids
     output = []
     masks = []
     num_sublists = []
@@ -99,8 +99,8 @@ class BertParts(nn.Module):
         n+=1
       num_sublists.append(n)
     
-    input_ids = torch.tensor(divided_tokens)
-    attention_masks = torch.tensor(masks)
+    input_ids = torch.tensor(divided_tokens).to(self.device)
+    attention_masks = torch.tensor(masks).to(self.device)
 
     bertOutput = self.bert(input_ids, attention_masks).last_hidden_state[:,0,:]
     max_pad = max(num_sublists)
@@ -116,12 +116,12 @@ class BertParts(nn.Module):
       mask_tensor = torch.tensor(mask)
       if num_sublists[i] != max_pad:
         # pad the tensors
-        pad = torch.zeros(max_pad - num_sublists[i], outSize)
+        pad = torch.zeros(max_pad - num_sublists[i], outSize).to(self.device)
         tensors = torch.cat((tensors, pad), dim=0)
       out.append(tensors)
       masks.append(mask_tensor)
     out = torch.stack(out, dim=0)
-    final_mask = torch.stack(masks, dim=0).bool()
+    final_mask = torch.stack(masks, dim=0).bool().to(self.device)
     return {"out": out, "mask": final_mask}
     
 
@@ -146,12 +146,10 @@ class Model(nn.Module):
         self.linear3 = nn.Linear(768, 4)
 
            
-        
-
-    def forward(self, input_ids, attention_mask, only_cls = False):
+    def forward(self, texts):
         self.bert.eval()
         with torch.no_grad():
-            bert_output = self.bert(input_ids)
+            bert_output = self.bertParts(texts)
         # take only the cls
         cls_out = self.attention(bert_output["out"].transpose(0,1), bert_output["mask"]).transpose(0,1)[:,0,:] # [batch, 768]
         cls_out = self.relu(cls_out)
@@ -195,3 +193,58 @@ class LongBert():
                 progress_bar.update(1)
         metrics = compute_metrics(total_labels, total_preds)
         return metrics
+
+    def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 25, eval_every_epoch = False, save_path = "./"):
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.model.train()
+        self.model.to(device)
+
+        dataloader = torch.utils.data.DataLoader(
+            train_ds, batch_size=batch_size, shuffle=True, collate_fn = collate_fn
+        )
+
+        criterion = nn.CrossEntropyLoss()
+        # Initialize the optimizer
+        optimizer = AdamW(self.model.parameters(), lr=lr)
+        num_training_steps=len(dataloader) * num_epochs
+        # Initialize the scheduler
+        scheduler = get_scheduler(
+            name="linear",
+            optimizer=optimizer,
+            num_warmup_steps=0,
+            num_training_steps=num_training_steps
+        )
+        progress_bar = tqdm(range(num_training_steps))
+        current_step = 0
+        # save the best model
+        best_metric = 0
+        b_metrics = 0
+        for epoch in range(num_epochs):
+            for batch in dataloader:
+                texts = batch["text"]
+                labels = batch["label"]
+
+                labels_tensor = torch.tensor(labels).to(device)
+
+                logits = self.model(texts)
+
+                loss = criterion(logits, labels_tensor)
+
+                loss.backward()
+                optimizer.step()
+                scheduler.step()
+                optimizer.zero_grad()
+                current_step += 1
+                progress_bar.update(1)
+            if (eval_every_epoch == True):
+                print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
+                eval_metrics = self.eval(val_ds, batch_size = batch_size)
+                print("Eval metrics: ", eval_metrics)
+                f1_score = eval_metrics["f1_weighted"]
+                if f1_score > best_metric:
+                    best_metric = f1_score
+                    b_metrics = eval_metrics
+                    torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
+                print("Best metric (f1_weighted): ", best_metric)
+                self.model.train()
+        return b_metrics
