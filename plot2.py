@@ -3,6 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import ast
+from transformers import AutoModel, AutoTokenizer
+
+
 
 label_names = {
         0: 'Certainly Fake',
@@ -124,7 +127,9 @@ def tweets_articles_lengths_for_labels():
         text = row["Text"]
         label = row["Label"]
 
-        text_length = len(text)
+        tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
+        text_length = len(tokenizer.tokenize(text))
+        #text_length = len(text)
         
         if type == "tweet":
             tweet_data[label].append(text_length)
@@ -485,7 +490,15 @@ def plot_scatter_length_capital(t = None):
 if __name__ == "__main__":
     df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
     df = df.reset_index()
-
+    tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
+    max_len = 0
+    for i, rows in df.iterrows():
+        if rows["Type"] == "article":
+            tokenized = tokenizer.tokenize(rows["Text"])
+            if len(tokenized) > max_len:
+                max_len = len(tokenized)
+    print(max_len)
+    """
     texts  = []
     texts_urls = []
     duplicated_urls = []
@@ -518,7 +531,7 @@ if __name__ == "__main__":
             texts_urls.append(u)
             labels.append(rows["Label"])
     print("Number of duplicates: " + str(len(duplicates)))
-
+    """
 
 
 
