@@ -53,6 +53,9 @@ def compute_recall(preds, ground_truth, average = 'macro'):
 def compute_f1(preds, ground_truth, average = 'macro'):
     return f1_score(ground_truth, preds, average=average, zero_division=1)
 
+def compute_f1_weighted(preds, ground_truth):
+    return f1_score(ground_truth, preds, average='weighted', zero_division=1)
+
 def compute_f1_None(preds, ground_truth):
     return f1_score(ground_truth, preds, average=None, zero_division=1)
 
@@ -65,6 +68,7 @@ def compute_metrics(preds, ground_truth):
         "precision": round(compute_precision(preds, ground_truth),3),
         "recall": round(compute_recall(preds, ground_truth),3),
         "f1": round(compute_f1(preds, ground_truth),3),
+        "f1_weighted": round(compute_f1_weighted(preds, ground_truth),3),
         "f1_none": [round(n, 3) for n in compute_f1_None(preds, ground_truth)],
     }
 
