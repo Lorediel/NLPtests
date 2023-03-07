@@ -70,6 +70,8 @@ class BertParts(nn.Module):
   def __init__(self):
     super().__init__()
     self.bert = AutoModel.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
+    
+
     self.tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
     self.max_len = self.tokenizer.model_max_length
     self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -128,7 +130,7 @@ class BertParts(nn.Module):
 class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
-        self.bert = BertParts()
+        self.bertParts = BertParts()
         self.attention = h_transformer()
         self.relu = nn.ReLU()
         self.linear1 = nn.Sequential(
@@ -147,7 +149,7 @@ class Model(nn.Module):
 
            
     def forward(self, texts):
-        self.bert.eval()
+        self.bertParts.eval()
         with torch.no_grad():
             bert_output = self.bertParts(texts)
         # take only the cls
@@ -194,7 +196,7 @@ class LongBert():
         metrics = compute_metrics(total_labels, total_preds)
         return metrics
 
-    def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 25, eval_every_epoch = False, save_path = "./"):
+    def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 25, save_path = "./"):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.train()
         self.model.to(device)
@@ -236,15 +238,14 @@ class LongBert():
                 optimizer.zero_grad()
                 current_step += 1
                 progress_bar.update(1)
-            if (eval_every_epoch == True):
-                print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
-                eval_metrics = self.eval(val_ds, batch_size = batch_size)
-                print("Eval metrics: ", eval_metrics)
-                f1_score = eval_metrics["f1_weighted"]
-                if f1_score > best_metric:
-                    best_metric = f1_score
-                    b_metrics = eval_metrics
-                    torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
-                print("Best metric (f1_weighted): ", best_metric)
-                self.model.train()
+            print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
+            eval_metrics = self.eval(val_ds, batch_size = batch_size)
+            print("Eval metrics: ", eval_metrics)
+            f1_score = eval_metrics["f1_weighted"]
+            if f1_score > best_metric:
+                best_metric = f1_score
+                b_metrics = eval_metrics
+                torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
+            print("Best metric (f1_weighted): ", best_metric)
+            self.model.train()
         return b_metrics
