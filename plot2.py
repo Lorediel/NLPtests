@@ -492,12 +492,14 @@ if __name__ == "__main__":
     df = df.reset_index()
     tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
     max_len = 0
+    n=0
     for i, rows in df.iterrows():
         if rows["Type"] == "article":
-            tokenized = tokenizer.tokenize(rows["Text"])
-            if len(tokenized) > max_len:
-                max_len = len(tokenized)
-    print(max_len)
+            tokenized = tokenizer(rows["Text"]).input_ids
+            
+            if len(tokenized) > 512:
+                n +=1
+    print(n)
     """
     texts  = []
     texts_urls = []

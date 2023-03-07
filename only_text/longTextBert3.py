@@ -71,7 +71,11 @@ class BertParts(nn.Module):
     super().__init__()
     self.bert = AutoModel.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
     self.tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
-    self.max_len = 8
+    self.max_len = 512
+    self.pooler = nn.Sequential(
+      nn.Linear(768, 768),
+      nn.Tanh(),
+    )
 
   def forward(self, texts):
     tokens_list = self.tokenizer(texts).input_ids    
@@ -99,15 +103,17 @@ class BertParts(nn.Module):
     
     input_ids = torch.tensor(divided_tokens)
     attention_masks = torch.tensor(masks)
+    with torch.no_grad():
+        bertOutput = self.bert(input_ids, attention_masks).last_hidden_state
 
-    bertOutput = self.bert(input_ids, attention_masks).pooler_output
 
     base = 0
     final = []
     for i in range(len(num_sublists)):
       tensors = bertOutput[base:base+num_sublists[i]]
-      mean_tensor = torch.mean(tensors, dim = 0)
-      print(mean_tensor.shape)
+      mean_tensor = torch.mean(tensors, dim = 0)[0]
+      mean_tensor = self.pooler(mean_tensor)
+
       final.append(mean_tensor)
       base += num_sublists[i]
     final = torch.stack(final, dim=0)
@@ -137,13 +143,12 @@ class Model(nn.Module):
 
            
     def forward(self, texts):
-        with torch.no_grad():
-            bert_output = self.bertParts(texts)
+        bert_output = self.bertParts(texts)
         # take only the cls
         #cls_out = self.attention(bert_output["out"].transpose(0,1), bert_output["mask"]).transpose(0,1)[:,0,:] # [batch, 768]
-        cls_out = self.relu(bert_output)
+        #cls_out = self.relu(bert_output)
 
-        cls_out = self.linear1(cls_out)
+        cls_out = self.linear1(bert_output)
         #cls_out = self.linear2(cls_out)
         cls_out = self.linear3(cls_out)
         logits = cls_out
