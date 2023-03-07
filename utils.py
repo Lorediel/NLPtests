@@ -161,6 +161,8 @@ def stratified_by_label(dataset):
         t_i, v_i = get_train_val_indexes(v)
         train_indexes += t_i
         validation_indexes += v_i
+    random.Random(64).shuffle(train_indexes)
+    random.Random(64).shuffle(validation_indexes)
     train_dataset = Subset(dataset, train_indexes)
     validation_dataset = Subset(dataset, validation_indexes)
     return train_dataset, validation_dataset

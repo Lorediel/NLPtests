@@ -84,7 +84,7 @@ class BertParts(nn.Module):
         tokens = self.tokenizer(text).input_ids
         tokens.pop(0) #remove cls
         tokens.pop(-1) #remove eos
-        max_len = 8
+        max_len = self.max_len
         chunks = [[102] + tokens[x:x+max_len-2] + [103] for x in range(0, len(tokens), max_len-2)]
         masks = [[1] * max_len for c in chunks]
         #pad the last chunk
