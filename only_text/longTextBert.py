@@ -45,7 +45,7 @@ class h_transformer(nn.Module):
 
 class PositionalEncoding(nn.Module):
 
-    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 25000):
         super().__init__()
         self.dropout = nn.Dropout(p=dropout)
 
@@ -149,7 +149,7 @@ class Model(nn.Module):
 
            
     def forward(self, texts):
-        self.bertParts.eval()
+        #self.bertParts.eval()
         with torch.no_grad():
             bert_output = self.bertParts(texts)
         # take only the cls
@@ -157,7 +157,7 @@ class Model(nn.Module):
         cls_out = self.relu(cls_out)
 
         cls_out = self.linear1(cls_out)
-        cls_out = self.linear2(cls_out)
+        #cls_out = self.linear2(cls_out)
         cls_out = self.linear3(cls_out)
         logits = cls_out
         return logits
