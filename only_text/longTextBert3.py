@@ -76,6 +76,7 @@ class BertParts(nn.Module):
       nn.Linear(768, 768),
       nn.Tanh(),
     )
+    self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
   def forward(self, texts):
     tokens_list = self.tokenizer(texts).input_ids    
@@ -101,8 +102,8 @@ class BertParts(nn.Module):
         n+=1
       num_sublists.append(n)
     
-    input_ids = torch.tensor(divided_tokens)
-    attention_masks = torch.tensor(masks)
+    input_ids = torch.tensor(divided_tokens).to(self.device)
+    attention_masks = torch.tensor(masks).to(self.device)
     with torch.no_grad():
         bertOutput = self.bert(input_ids, attention_masks).last_hidden_state
 
@@ -116,7 +117,7 @@ class BertParts(nn.Module):
 
       final.append(mean_tensor)
       base += num_sublists[i]
-    final = torch.stack(final, dim=0)
+    final = torch.stack(final, dim=0).to(self.device)
     
     return final
     
