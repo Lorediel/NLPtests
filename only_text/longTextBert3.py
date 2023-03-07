@@ -14,7 +14,7 @@ from typing import Tuple
 
 class h_transformer(nn.Module):
 
-    def __init__(self, d_model: int = 768, nhead: int = 4, d_hid: int = 768,
+    def __init__(self, d_model: int = 768, nhead: int = 8, d_hid: int = 768,
                  nlayers: int = 6, dropout: float = 0.25):
 
         # PARAMETERS
@@ -77,55 +77,41 @@ class BertParts(nn.Module):
     self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
   def forward(self, texts):
-    tokens_list = self.tokenizer(texts).input_ids
-    output = []
-    masks = []
-    num_sublists = []
-    divided_tokens = []
-    longest = 0
 
-    for tokens in tokens_list:
-      tokens.pop(0) #remove cls
-      tokens.pop(-1) #remove eos
-      n = 0
-      
-      for x in range(0, len(tokens), self.max_len - 2):
-        chunk = [102] + tokens[x:x+self.max_len-2] + [103]
-        mask = [1] * self.max_len
+    bOut = []
+    longest_seq = 0
+    for text in texts:
+        tokens = self.tokenizer(text).input_ids
+        tokens.pop(0) #remove cls
+        tokens.pop(-1) #remove eos
+        max_len = self.max_len
+        chunks = [[102] + tokens[x:x+max_len-2] + [103] for x in range(0, len(tokens), max_len-2)]
+        masks = [[1] * max_len for c in chunks]
         #pad the last chunk
-        if (len(chunk) != self.max_len):
-          mask = [1] * len(chunk) + [0] * (self.max_len - len(chunk))
-          chunk = chunk + ([0] * (self.max_len - len(chunk)))
-        divided_tokens.append(chunk)
-        masks.append(mask)
-        n+=1
-      num_sublists.append(n)
-    
-    input_ids = torch.tensor(divided_tokens).to(self.device)
-    attention_masks = torch.tensor(masks).to(self.device)
+        masks[-1] = [1] * len(chunks[-1]) + [0] * (max_len - len(chunks[-1]))
+        chunks[-1] = chunks[-1] + [0] * (max_len - len(chunks[-1]))
+        masks = torch.tensor(masks).to(self.device)
+        chunks = torch.tensor(chunks).to(self.device)
+        bertOutSingle = self.bert(chunks, masks).last_hidden_state
+        s = bertOutSingle.shape
+        bertOutSingle = bertOutSingle.view(s[0] * s[1], s[2])
+        if bertOutSingle.shape[0] > longest_seq:
+            longest_seq = bertOutSingle.shape[0]
+        bOut.append(bertOutSingle)
 
-    bertOutput = self.bert(input_ids, attention_masks).last_hidden_state[:,0,:]
-    max_pad = max(num_sublists)
-    out = []
-    masks = []
-    base = 0
-    masks = []
-    outSize = bertOutput.shape[1]
+    final_sequences = []
+    src_key_mask = []
+    for sequence in bOut:
+        seq_len = sequence.shape[0]
+        pad = torch.zeros(longest_seq - seq_len, 768).to(self.device)
+        sequence = torch.concat((sequence, pad), dim=0)
+        mask = [False] * seq_len + [True] * (longest_seq - seq_len)
+        final_sequences.append(sequence.unsqueeze(0))
+        src_key_mask.append(torch.tensor(mask).to(self.device).unsqueeze(0))
 
-    for i in range(len(num_sublists)):
-      tensors = bertOutput[base:base+num_sublists[i]]
-      mask = [0.] * num_sublists[i] + [1.] * (max_pad - num_sublists[i])
-      mask_tensor = torch.tensor(mask)
-      if num_sublists[i] != max_pad:
-        # pad the tensors
-        pad = torch.zeros(max_pad - num_sublists[i], outSize).to(self.device)
-        tensors = torch.cat((tensors, pad), dim=0)
-      out.append(tensors)
-      masks.append(mask_tensor)
-      base+=num_sublists[i]
-    out = torch.stack(out, dim=0)
-    final_mask = torch.stack(masks, dim=0).bool().to(self.device)
-    return {"out": out, "mask": final_mask}
+    final_sequences = torch.cat(final_sequences, dim=0)
+    src_key_mask = torch.cat(src_key_mask, dim=0)
+    return {"out": final_sequences, "mask": src_key_mask}
     
 
 class Model(nn.Module):
@@ -150,7 +136,6 @@ class Model(nn.Module):
 
            
     def forward(self, texts):
-        #self.bertParts.eval()
         with torch.no_grad():
             bert_output = self.bertParts(texts)
         # take only the cls
