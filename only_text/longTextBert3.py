@@ -79,6 +79,8 @@ class BertParts(nn.Module):
         self.bert.load_state_dict(new_s)
     self.tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
     self.max_len = 512
+    for name, param in self.bert.named_parameters():
+       param.require_grad = False
     self.pooler = nn.Sequential(
       nn.Linear(768, 768),
       nn.Tanh(),
@@ -154,8 +156,7 @@ class Model(nn.Module):
 
            
     def forward(self, texts):
-        with torch.no_grad():
-          bert_output = self.bertParts(texts)
+        bert_output = self.bertParts(texts)
         # take only the cls
         #cls_out = self.attention(bert_output["out"].transpose(0,1), bert_output["mask"]).transpose(0,1)[:,0,:] # [batch, 768]
         #cls_out = self.relu(bert_output)
