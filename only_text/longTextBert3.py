@@ -79,8 +79,8 @@ class BertParts(nn.Module):
         self.bert.load_state_dict(new_s)
     self.tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
     self.max_len = 512
-    for name, param in self.bert.named_parameters():
-       param.require_grad = False
+    for param in self.bert.parameters():
+       param.requires_grad = False
     self.pooler = nn.Sequential(
       nn.Linear(768, 768),
       nn.Tanh(),
