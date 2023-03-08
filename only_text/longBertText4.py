@@ -182,8 +182,8 @@ class Model(nn.Module):
 
 class LongBert():
 
-    def __init__(self):
-        self.model = Model()
+    def __init__(self,pretrained_model_path = None):
+        self.model = Model(pretrained_model_path)
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(self.device)
 
