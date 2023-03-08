@@ -14,7 +14,7 @@ from typing import Tuple
 
 class h_transformer(nn.Module):
 
-    def __init__(self, d_model: int = 768, nhead: int = 8, d_hid: int = 768,
+    def __init__(self, d_model: int = 768, nhead: int = 4, d_hid: int = 768,
                  nlayers: int = 6, dropout: float = 0.25):
 
         # PARAMETERS
