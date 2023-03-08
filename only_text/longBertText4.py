@@ -67,9 +67,16 @@ class PositionalEncoding(nn.Module):
 
 class BertParts(nn.Module):
 
-  def __init__(self):
+  def __init__(self, pretrained_model_path = None):
     super().__init__()
     self.bert = AutoModel.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
+    if (pretrained_model_path != None):
+        s = torch.load(pretrained_model_path)
+        new_s = {}
+        for n in s:
+            if (n.startswith("bert")):
+                new_s[n[5:]] = s[n]
+        self.bert.load_state_dict(new_s)
     self.tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
     self.max_len = 512
     self.pooler = nn.Sequential(
@@ -138,9 +145,9 @@ class BertParts(nn.Module):
     
 
 class Model(nn.Module):
-    def __init__(self):
+    def __init__(self, pretrained_model_path = None):
         super(Model, self).__init__()
-        self.bertParts = BertParts()
+        self.bertParts = BertParts(pretrained_model_path)
         self.attention = h_transformer()
         self.relu = nn.ReLU()
         self.linear1 = nn.Sequential(
@@ -165,7 +172,7 @@ class Model(nn.Module):
         cls_out = self.attention(bert_output["out"].transpose(0,1), bert_output["mask"]).transpose(0,1)[:,0,:] # [batch, 768]
         #cls_out = self.relu(bert_output)
 
-        cls_out = self.linear1(bert_output)
+        cls_out = self.linear1(cls_out)
         #cls_out = self.linear2(cls_out)
         cls_out = self.linear3(cls_out)
         logits = cls_out
