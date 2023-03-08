@@ -78,6 +78,10 @@ class BertParts(nn.Module):
     )
     self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    for name, param in self.bert.named_parameters():
+      if (not name.startswith("encoder.layer.10") and not name.startswith("encoder.layer.10")):
+        param.require_grad = False
+
   def forward(self, texts):
     tokens_list = self.tokenizer(texts).input_ids    
     output = []
@@ -104,8 +108,7 @@ class BertParts(nn.Module):
     
     input_ids = torch.tensor(divided_tokens).to(self.device)
     attention_masks = torch.tensor(masks).to(self.device)
-    with torch.no_grad():
-        bertOutput = self.bert(input_ids, attention_masks).last_hidden_state
+    bertOutput = self.bert(input_ids, attention_masks).last_hidden_state
 
 
     base = 0
