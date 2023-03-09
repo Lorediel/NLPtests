@@ -167,7 +167,7 @@ def stratified_by_label(dataset):
     validation_dataset = Subset(dataset, validation_indexes)
     return train_dataset, validation_dataset
     
-def compute_f1_weighted(percents, n_samples):
+def cf1(percents, n_samples):
     f1 = 0
     for i in range(len(percents)):
         f1 += percents[i] * n_samples[i]
