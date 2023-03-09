@@ -6,6 +6,7 @@ from tqdm.auto import tqdm
 from NLPtests.utils import compute_metrics
 from NLPtests.FakeNewsDataset import collate_fn
 import os
+from NLPtests.focal_loss import FocalLoss
 
 class Model(nn.Module):
     def __init__(self):
@@ -125,7 +126,7 @@ class BertModel():
         metrics = compute_metrics(total_labels, total_preds)
         return metrics
     
-    def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, eval_every_epoch = False, warmup_steps = 0, num_eval_steps = 10, save_path = "./", tokenization_strategy = "first", only_cls = False):
+    def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, eval_every_epoch = False, warmup_steps = 0, num_eval_steps = 10, save_path = "./", tokenization_strategy = "first", only_cls = False, focal_loss = False):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.train()
         self.model.to(device)
@@ -133,8 +134,10 @@ class BertModel():
         dataloader = torch.utils.data.DataLoader(
             train_ds, batch_size=batch_size, shuffle=True, collate_fn = collate_fn
         )
-
-        criterion = nn.CrossEntropyLoss()
+        if focal_loss:
+            criterion = FocalLoss()
+        else:
+            criterion = nn.CrossEntropyLoss()
         # Initialize the optimizer
         optimizer = AdamW(self.model.parameters(), lr=lr)
         num_training_steps=len(dataloader) * num_epochs
@@ -180,7 +183,7 @@ class BertModel():
             print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
             eval_metrics = self.eval(val_ds, tokenization_strategy, batch_size = batch_size, only_cls = only_cls)
             print("Eval metrics: ", eval_metrics)
-            f1_score = eval_metrics["f1_weighted"]
+            f1_score = eval_metrics["f1"]
             if f1_score > min(best_metrics):
                 best_metrics.remove(min(best_metrics))
                 best_metrics.append(f1_score)
