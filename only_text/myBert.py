@@ -180,7 +180,7 @@ class BertModel():
             print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
             eval_metrics = self.eval(val_ds, tokenization_strategy, batch_size = batch_size, only_cls = only_cls)
             print("Eval metrics: ", eval_metrics)
-            f1_score = eval_metrics["f1"]
+            f1_score = eval_metrics["f1_weighted"]
             if f1_score > min(best_metrics):
                 best_metrics.remove(min(best_metrics))
                 best_metrics.append(f1_score)
