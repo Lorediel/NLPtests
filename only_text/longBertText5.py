@@ -111,19 +111,21 @@ class BertParts(nn.Module):
         n+=1
       num_sublists.append(n)
     
-    input_ids = torch.tensor(divided_tokens)
-    attention_masks = torch.tensor(masks)
+    input_ids = torch.tensor(divided_tokens).to(self.device)
+    attention_masks = torch.tensor(masks).to(self.device)
+    bertOutput = self.bert(input_ids, attention_masks).last_hidden_state[:,0,:]
+    bertOutput = self.pooler(bertOutput)
 
-    bertOutput = self.bert(input_ids, attention_masks).pooler_output
-    
+
     base = 0
     final = []
     for i in range(len(num_sublists)):
       tensors = bertOutput[base:base+num_sublists[i]]
       mean_tensor = torch.mean(tensors, dim = 0)
+
       final.append(mean_tensor)
       base += num_sublists[i]
-    final = torch.stack(final, dim=0)
+    final = torch.stack(final, dim=0).to(self.device)
     
     return final
     
