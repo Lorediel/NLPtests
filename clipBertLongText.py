@@ -8,7 +8,7 @@ import os
 from tqdm.auto import tqdm
 from NLPtests.utils import *
 from NLPtests.FakeNewsDataset import collate_fn
-from focal_loss import FocalLoss
+from NLPtests.focal_loss import FocalLoss
 class BertParts(nn.Module):
 
   def __init__(self, pretrained_model_path = None):
