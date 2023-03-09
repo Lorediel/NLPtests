@@ -148,7 +148,7 @@ class BertModel():
         progress_bar = tqdm(range(num_training_steps))
         current_step = 0
         # save the best model
-        best_metric = 0
+        best_metrics = [0, 0, 0]
         for epoch in range(num_epochs):
             for batch in dataloader:
                 texts = batch["text"]
@@ -170,31 +170,21 @@ class BertModel():
 
                 loss = criterion(logits, labels_tensor)
 
-                if (current_step % num_eval_steps == 0 and eval_every_epoch == False):
-                    print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
-                    eval_metrics = self.eval(val_ds, tokenization_strategy, batch_size = batch_size, only_cls = only_cls)
-                    print("Eval metrics: ", eval_metrics)
-                    f1_score = eval_metrics["f1"]
-                    if f1_score > best_metric:
-                        best_metric = f1_score
-                        torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
-                    print("Best metric: ", best_metric)
-                    self.model.train()
-
                 loss.backward()
                 optimizer.step()
                 scheduler.step()
                 optimizer.zero_grad()
                 current_step += 1
                 progress_bar.update(1)
-            if (eval_every_epoch == True):
-                print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
-                eval_metrics = self.eval(val_ds, tokenization_strategy, batch_size = batch_size, only_cls = only_cls)
-                print("Eval metrics: ", eval_metrics)
-                f1_score = eval_metrics["f1"]
-                if f1_score > best_metric:
-                    best_metric = f1_score
-                    torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
-                print("Best metric: ", best_metric)
-                self.model.train()
+            
+            print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
+            eval_metrics = self.eval(val_ds, tokenization_strategy, batch_size = batch_size, only_cls = only_cls)
+            print("Eval metrics: ", eval_metrics)
+            f1_score = eval_metrics["f1"]
+            if f1_score > min(best_metrics):
+                best_metrics.remove(min(best_metrics))
+                best_metrics.append(f1_score)
+                torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth" + str(f1_score)))
+            print("Best metric: ", best_metrics)
+            self.model.train()
         return self.model

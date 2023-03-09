@@ -113,8 +113,8 @@ class BertParts(nn.Module):
     
     input_ids = torch.tensor(divided_tokens).to(self.device)
     attention_masks = torch.tensor(masks).to(self.device)
-    bertOutput = self.bert(input_ids, attention_masks).last_hidden_state
-
+    # take only the CLS token
+    bertOutput = self.bert(input_ids, attention_masks).last_hidden_state[0,:,:]
 
     base = 0
     final = []
