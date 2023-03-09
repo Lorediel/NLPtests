@@ -181,7 +181,6 @@ class BertModel():
                     print("Best metric: ", best_metric)
                     self.model.train()
 
-
                 loss.backward()
                 optimizer.step()
                 scheduler.step()
