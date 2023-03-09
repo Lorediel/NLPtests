@@ -8,14 +8,14 @@ import os
 from tqdm.auto import tqdm
 from NLPtests.utils import *
 from NLPtests.FakeNewsDataset import collate_fn
-
+from focal_loss import FocalLoss
 class BertParts(nn.Module):
 
-  def __init__(self, pretrained_path = None):
+  def __init__(self, pretrained_model_path = None):
     super().__init__()
     self.bert = AutoModel.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
-    if (pretrained_path != None):
-        s = torch.load(pretrained_path)
+    if (pretrained_model_path != None):
+        s = torch.load(pretrained_model_path)
         new_s = {}
         for n in s:
             if (n.startswith("bert")):
@@ -57,15 +57,15 @@ class BertParts(nn.Module):
     
     input_ids = torch.tensor(divided_tokens).to(self.device)
     attention_masks = torch.tensor(masks).to(self.device)
-    bertOutput = self.bert(input_ids, attention_masks).last_hidden_state
+    bertOutput = self.bert(input_ids, attention_masks).last_hidden_state[:,0,:]
+    bertOutput = self.pooler(bertOutput)
 
 
     base = 0
     final = []
     for i in range(len(num_sublists)):
       tensors = bertOutput[base:base+num_sublists[i]]
-      mean_tensor = torch.mean(tensors, dim = 0)[0]
-      mean_tensor = self.pooler(mean_tensor)
+      mean_tensor = torch.mean(tensors, dim = 0)
 
       final.append(mean_tensor)
       base += num_sublists[i]
@@ -194,15 +194,17 @@ class ClipBertModel:
 
 
 
-    def train(self, train_ds, eval_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./", tokenization_strategy = "first"):
+    def train(self, train_ds, eval_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./", tokenization_strategy = "first", focal_loss = False):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(device)
 
         dataloader = torch.utils.data.DataLoader(
             train_ds, batch_size=batch_size, shuffle=True, collate_fn = collate_fn
         )
-
-        criterion = nn.CrossEntropyLoss()
+        if focal_loss:
+            criterion = FocalLoss(gamma = 2, reduction = "sum")
+        else:
+            criterion = nn.CrossEntropyLoss()
         
         self.model.train()
         # Initialize the optimizer
@@ -264,7 +266,7 @@ class ClipBertModel:
             print("Loss: ", loss.item())
             eval_metrics = self.eval(eval_ds, tokenization_strategy, batch_size=batch_size)
             print("Eval metrics: ", eval_metrics)
-            f1_score = eval_metrics["f1_weighted"]
+            f1_score = eval_metrics["f1"]
             if f1_score > min(best_metrics):
                 best_metrics.remove(min(best_metrics))
                 best_metrics.append(f1_score)
