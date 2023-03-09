@@ -3,7 +3,7 @@ from tqdm.auto import tqdm
 from NLPtests.utils import compute_metrics
 from NLPtests.FakeNewsDataset import collate_fn
 import os
-
+from NLPtests.focal_loss import FocalLoss
 import torch
 from torch import nn, Tensor
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
@@ -197,7 +197,7 @@ class LongBert():
         metrics = compute_metrics(total_labels, total_preds)
         return metrics
 
-    def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 25, save_path = "./"):
+    def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 25, save_path = "./", focal_loss = False):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.train()
         self.model.to(device)
@@ -206,7 +206,10 @@ class LongBert():
             train_ds, batch_size=batch_size, shuffle=True, collate_fn = collate_fn
         )
 
-        criterion = nn.CrossEntropyLoss()
+        if focal_loss:
+            criterion = FocalLoss(gamma = 2, reduction = "sum")
+        else:
+            criterion = nn.CrossEntropyLoss()
         # Initialize the optimizer
         optimizer = AdamW(self.model.parameters(), lr=lr)
         num_training_steps=len(dataloader) * num_epochs
