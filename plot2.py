@@ -105,7 +105,7 @@ Length of the text
 """
 
 
-def tweets_articles_lengths_for_labels():
+def tweets_articles_lengths_for_labels(tokenizer = None):
     df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
     df = df.reset_index()
 
@@ -127,9 +127,10 @@ def tweets_articles_lengths_for_labels():
         text = row["Text"]
         label = row["Label"]
 
-        tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
-        text_length = len(tokenizer.tokenize(text))
-        #text_length = len(text)
+        if tokenizer != None:
+            text_length = len(tokenizer.tokenize(text))
+        else:
+            text_length = len(text)
         
         if type == "tweet":
             tweet_data[label].append(text_length)
@@ -144,6 +145,18 @@ def tweets_articles_lengths_for_labels():
         article_data[label] = sorted(article_data[label])
 
     return tweet_data, article_data
+
+def generic_length_stats(tokenizer = None):
+    tweet_data, article_data = tweets_articles_lengths_for_labels(tokenizer)
+    max_tweet = [max(tweet_data[0]), max(tweet_data[1]), max(tweet_data[2]), max(tweet_data[3])]
+    max_article = [max(article_data[0]), max(article_data[1]), max(article_data[2]), max(article_data[3])]
+    min_tweet = [min(tweet_data[0]), min(tweet_data[1]), min(tweet_data[2]), min(tweet_data[3])]
+    min_article = [min(article_data[0]), min(article_data[1]), min(article_data[2]), min(article_data[3])]
+    mean_tweet = [round(np.mean(tweet_data[0])), round(np.mean(tweet_data[1])), round(np.mean(tweet_data[2])), round(np.mean(tweet_data[3]))]
+    mean_article = [round(np.mean(article_data[0])), round(np.mean(article_data[1])), round(np.mean(article_data[2])), round(np.mean(article_data[3]))]
+
+    return max_tweet, max_article, min_tweet, min_article, mean_tweet, mean_article
+
 
 def count_unique(data, min, max):
     unique, counts = np.unique(data, return_counts=True)
@@ -172,7 +185,7 @@ def include_right_edge(values, num_bins):
     return values
 
 
-def length_bins(num_bins, type):
+def length_bins(num_bins, type, tokenizer = None):
     # use computer modern font
     plt.rcParams['mathtext.fontset'] = 'cm'
     plt.rcParams['font.family'] = 'STIXGeneral'
@@ -180,7 +193,7 @@ def length_bins(num_bins, type):
     # increase font size
     plt.rcParams.update({'font.size': 18})
 
-    tweet_data, article_data = tweets_articles_lengths_for_labels()
+    tweet_data, article_data = tweets_articles_lengths_for_labels(tokenizer)
     if type == "tweet":
         data = tweet_data
     elif type == "article":
@@ -251,7 +264,11 @@ def length_bins(num_bins, type):
     legend = plt.legend( (bar0, bar1, bar2, bar3), (label_names[0], label_names[1], label_names[2], label_names[3]), loc='upper center', bbox_to_anchor=(0.5, 1.06), ncol=4, prop={'size': 14})
     legend.get_frame().set_alpha(None)
     # put the legend out of the figure
-    plt.xlabel("Lenght of text (characters)")
+    tok_flag = "characters"
+    if tokenizer != None:
+        tok_flag = "tokens"
+    
+    plt.xlabel("Lenght of text" + " (" + tok_flag + ")")
     plt.ylabel("Number of samples")
     if type == "tweet":
         title = "Tweets length distribution"
@@ -486,20 +503,13 @@ def plot_scatter_length_capital(t = None):
     plt.ylabel("Percent of capital letters")
     plt.legend()
     plt.show()  
+
     
 if __name__ == "__main__":
-    df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
-    df = df.reset_index()
+    #df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
+    #df = df.reset_index()
     tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
-    max_len = 0
-    n=0
-    for i, rows in df.iterrows():
-        if rows["Type"] == "article":
-            tokenized = tokenizer(rows["Text"]).input_ids
-            
-            if len(tokenized) > 512:
-                n +=1
-    print(n)
+    length_bins(5, "tweet", tokenizer)
     """
     texts  = []
     texts_urls = []

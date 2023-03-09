@@ -113,7 +113,7 @@ class BertParts(nn.Module):
     
     input_ids = torch.tensor(divided_tokens).to(self.device)
     attention_masks = torch.tensor(masks).to(self.device)
-    bertOutput = self.bert(input_ids, attention_masks).last_hidden_state
+    bertOutput = self.bert(input_ids, attention_masks).last_hidden_state #shape [total_sequences, 8 ,768]
 
 
     base = 0

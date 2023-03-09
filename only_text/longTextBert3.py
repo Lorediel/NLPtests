@@ -87,10 +87,6 @@ class BertParts(nn.Module):
     )
     self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    for name, param in self.bert.named_parameters():
-      if (not name.startswith("encoder.layer.10")):
-        param.require_grad = False
-
   def forward(self, texts):
     tokens_list = self.tokenizer(texts).input_ids    
     output = []
