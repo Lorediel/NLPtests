@@ -193,7 +193,7 @@ if __name__ == '__main__':
     # [1, 5, 21, 10]
     # [30, 41, 81, 32]
 
-    percents = [0.64, 0.432, 0.58, 0.5]
-    n_samples = [30, 41, 81, 32]
-    print(compute_f1_weighted(percents, n_samples))
+    #percents = [0.64, 0.432, 0.58, 0.5]
+    #n_samples = [30, 41, 81, 32]
+    #print(compute_f1_weighted(percents, n_samples))
 

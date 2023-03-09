@@ -252,7 +252,7 @@ class ClipBertModel:
                 )
                 
                 preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
-                loss = criterion(logits, labels)
+                loss = criterion(logits, torch.tensor(labels).to(device))
                 
 
                 loss.backward()

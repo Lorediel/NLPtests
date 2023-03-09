@@ -510,6 +510,7 @@ if __name__ == "__main__":
     #df = df.reset_index()
     tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
     length_bins(5, "tweet", tokenizer)
+    
     """
     texts  = []
     texts_urls = []
