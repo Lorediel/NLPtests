@@ -101,7 +101,7 @@ class Model(nn.Module):
 
         i_embeddings = self.base_model.get_image_features(pixel_values = pixel_values)
         embeddings_images = i_embeddings
-        embeddings_images = torch.cat(embeddings_images, dim=0)
+        #embeddings_images = torch.cat(embeddings_images, dim=0)
         # Using tanh because the pooler output of bert is tanh
         embeddings_images = self.tanh(embeddings_images)
         embeddings = torch.cat((t_embeddings, embeddings_images), dim=1)

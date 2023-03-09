@@ -192,7 +192,7 @@ class BertModel():
                 print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
                 eval_metrics = self.eval(val_ds, tokenization_strategy, batch_size = batch_size, only_cls = only_cls)
                 print("Eval metrics: ", eval_metrics)
-                f1_score = eval_metrics["f1"]
+                f1_score = eval_metrics["f1_weighted"]
                 if f1_score > best_metric:
                     best_metric = f1_score
                     torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))

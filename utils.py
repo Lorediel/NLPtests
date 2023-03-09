@@ -167,10 +167,33 @@ def stratified_by_label(dataset):
     validation_dataset = Subset(dataset, validation_indexes)
     return train_dataset, validation_dataset
     
+def compute_f1_weighted(percents, n_samples):
+    f1 = 0
+    for i in range(len(percents)):
+        f1 += percents[i] * n_samples[i]
+    return f1 / sum(n_samples)
 
 if __name__ == '__main__':
+    """
     tsv_file = "/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv"
     dataset = FakeNewsDataset(tsv_file, "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
     train_dataset, validation_dataset = stratifiedSplit(dataset)
-   
+    articles  = get_only_type(dataset, "article")
+    t, v = stratified_by_label(articles)
+    labels = {
+        0: 0,
+        1: 0,
+        2: 0,
+        3: 0
+    }
+    for sample in validation_dataset:
+        labels[sample["label"]] += 1
+    print(labels)
+    """
+    # [1, 5, 21, 10]
+    # [30, 41, 81, 32]
+
+    percents = [0.64, 0.432, 0.58, 0.5]
+    n_samples = [30, 41, 81, 32]
+    print(compute_f1_weighted(percents, n_samples))
 
