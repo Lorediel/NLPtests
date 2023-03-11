@@ -30,7 +30,7 @@ class Model(nn.Module):
         
         # Image embeddings extraction from resnet
         i_embeddings = self.resnet(pixel_values = pixel_values).pooler_output
-        
+        i_embeddings = self.flatten(i_embeddings)
         
 
         #textual embeddings extraction from bert
