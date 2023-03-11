@@ -63,7 +63,7 @@ def compute_accuracy(preds, ground_truth):
     return accuracy_score(ground_truth, preds)
 
 def compute_metrics(preds, ground_truth):
-    return {
+    metrics =  {
         "accuracy": round(compute_accuracy(preds, ground_truth),3),
         "precision": round(compute_precision(preds, ground_truth),3),
         "recall": round(compute_recall(preds, ground_truth),3),
@@ -71,7 +71,14 @@ def compute_metrics(preds, ground_truth):
         "f1_weighted": round(compute_f1_weighted(preds, ground_truth),3),
         "f1_none": [round(n, 3) for n in compute_f1_None(preds, ground_truth)],
     }
+    return metrics
 
+def format_metrics(metrics):
+    formatted = ""
+    for k,v in metrics.items():
+        formatted += v + "\t "
+    formatted[-1] = ""
+    return formatted
 
 def take_per_type_label_indexes(dataset):
     indexes = {

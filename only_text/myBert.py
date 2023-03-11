@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from transformers import ResNetModel, BertModel, AutoModel,  AutoTokenizer, AutoImageProcessor, AdamW, get_scheduler
 from tqdm.auto import tqdm
-from NLPtests.utils import compute_metrics
+from NLPtests.utils import compute_metrics, format_metrics
 from NLPtests.FakeNewsDataset import collate_fn
 import os
 from NLPtests.focal_loss import FocalLoss
@@ -40,7 +40,7 @@ class Model(nn.Module):
         embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)
         """
-        
+
         logits = self.linear3(embeddings)
         
         probs = self.softmax(logits)
@@ -121,6 +121,7 @@ class BertModel():
                 total_preds += list(preds)
                 total_labels += list(labels)
                 progress_bar.update(1)
+        progress_bar.close()
         metrics = compute_metrics(total_labels, total_preds)
         return metrics
     
@@ -150,6 +151,7 @@ class BertModel():
         current_step = 0
         # save the best model
         best_metrics = [0, 0, 0]
+        print("accuracy | precision | recall | f1 | f1_weighted | f1_for_each_class")
         for epoch in range(num_epochs):
             for batch in dataloader:
                 texts = batch["text"]
@@ -179,12 +181,12 @@ class BertModel():
             
             print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
             eval_metrics = self.eval(val_ds, tokenization_strategy, batch_size = batch_size)
-            print("Eval metrics: ", eval_metrics)
-            f1_score = eval_metrics["f1"]
+            print("Eval metrics: ", format_metrics(eval_metrics))
+            f1_score = eval_metrics["f1_weighted"]
             if f1_score > min(best_metrics):
                 best_metrics.remove(min(best_metrics))
                 best_metrics.append(f1_score)
                 torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth" + str(f1_score)))
-            print("Best metric: ", best_metrics)
+            print("Best metric: ", format_metrics(best_metrics))
             self.model.train()
         return self.model
