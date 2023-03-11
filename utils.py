@@ -114,8 +114,11 @@ def stratifiedSplit(dataset):
         t_i, v_i = get_train_val_indexes(v)
         train_indexes += t_i
         validation_indexes += v_i
+
+
     random.Random(64).shuffle(train_indexes)
     random.Random(64).shuffle(validation_indexes)
+
     train_dataset = Subset(dataset, train_indexes)
     validation_dataset = Subset(dataset, validation_indexes)
     return train_dataset, validation_dataset
@@ -177,5 +180,8 @@ def get_confusion_matrix(preds, ground_truth):
     return confusion_matrix(ground_truth, preds)
 
 if __name__ == '__main__':
-    cm = get_confusion_matrix([1,2,3,4], [1,1,1,1])
-    ConfusionMatrixDisplay(cm, display_labels=["Certainly Fake","Probably Fake","Probably Real", "Certainly Real"]).plot()
+    pass
+    #ds = FakeNewsDataset('/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv', '/Users/lorenzodamico/Documents/Uni/tesi/content/Media')
+    #t, v = stratifiedSplit(ds)
+
+    
