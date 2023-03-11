@@ -1,10 +1,10 @@
 from datasets import load_dataset, DatasetDict
 from torch.utils.data import DataLoader
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, ConfusionMatrixDisplay
 import numpy as np
 from torch.utils.data import Dataset, Subset
 import pandas as pd
-from NLPtests.FakeNewsDataset import FakeNewsDataset
+#from FakeNewsDataset import FakeNewsDataset
 import collections
 import random
 
@@ -173,27 +173,9 @@ def cf1(percents, n_samples):
         f1 += percents[i] * n_samples[i]
     return f1 / sum(n_samples)
 
+def get_confusion_matrix(preds, ground_truth):
+    return confusion_matrix(ground_truth, preds)
+
 if __name__ == '__main__':
-    """
-    tsv_file = "/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv"
-    dataset = FakeNewsDataset(tsv_file, "/Users/lorenzodamico/Documents/Uni/tesi/content/Media")
-    train_dataset, validation_dataset = stratifiedSplit(dataset)
-    articles  = get_only_type(dataset, "article")
-    t, v = stratified_by_label(articles)
-    labels = {
-        0: 0,
-        1: 0,
-        2: 0,
-        3: 0
-    }
-    for sample in validation_dataset:
-        labels[sample["label"]] += 1
-    print(labels)
-    """
-    # [1, 5, 21, 10]
-    # [30, 41, 81, 32]
-
-    percents = [0.64, 0.432, 0.58, 0.5]
-    n_samples = [30, 41, 81, 32]
-    print(cf1(percents, n_samples))
-
+    cm = get_confusion_matrix([1,2,3,4], [1,1,1,1])
+    ConfusionMatrixDisplay(cm, display_labels=["Certainly Fake","Probably Fake","Probably Real", "Certainly Real"]).plot()
