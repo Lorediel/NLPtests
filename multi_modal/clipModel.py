@@ -64,10 +64,6 @@ class Model(nn.Module):
         embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)
 
-        embeddings = self.linear2(embeddings)
-        embeddings = self.layernorm(embeddings)
-        embeddings = self.dropout(embeddings)
-        embeddings = self.relu(embeddings)
 
         logits = self.linear3(embeddings)
         probs = self.softmax(logits)
