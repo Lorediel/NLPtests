@@ -135,6 +135,8 @@ class BertResnetConcatModel():
 
                 for k, v in i_inputs.items():
                     i_inputs[k] = v.to(device)
+                for k, v in t_inputs.items():
+                    t_inputs[k] = v.to(device)
 
                 logits, probs = self.model(
                     input_ids=t_inputs["input_ids"],
@@ -202,6 +204,8 @@ class BertResnetConcatModel():
 
                 for k, v in i_inputs.items():
                     i_inputs[k] = v.to(device)
+                for k, v in t_inputs.items():
+                    t_inputs[k] = v.to(device)
 
                 labels_tensor = torch.tensor(labels).to(device)
                 logits, probs = self.model(
