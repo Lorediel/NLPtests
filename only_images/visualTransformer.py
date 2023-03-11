@@ -94,7 +94,7 @@ class VisualTransformer():
         metrics = compute_metrics(total_labels, total_preds)
         return metrics
 
-    def train(self, train_ds, val_ds, num_epochs= 3, eval_every_epoch = False, lr = 5e-5,  warmup_steps = 0, batch_size = 8, num_eval_steps = 10, save_path = "./"):
+    def train(self, train_ds, val_ds, num_epochs= 3, lr = 5e-5,  warmup_steps = 0, batch_size = 8, num_eval_steps = 10, save_path = "./"):
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -115,7 +115,8 @@ class VisualTransformer():
         progress_bar = tqdm(range(num_training_steps))
         current_step = 0
         criterion = nn.CrossEntropyLoss()
-        best_metric = 0
+        best_metrics = [0, 0, 0, 0, 0]
+        print("accuracy | precision | recall | f1 | f1_weighted | f1_for_each_class")
         for epoch in range(num_epochs):
             for batch in dataloader:
                 #current_step += 1
@@ -137,40 +138,21 @@ class VisualTransformer():
 
                 loss = criterion(logits, labels_tensor)
 
-
-                
-
-                
-                if (current_step % num_eval_steps == 0 and eval_every_epoch == False):
-                    print("Epoch: ", epoch)
-                    print("Loss: ", loss.item())
-                    eval_metrics = self.eval(val_ds)
-                    print("Eval metrics: ", eval_metrics)
-                    f1_score = eval_metrics["f1"]
-                    if f1_score > best_metric:
-                        print("New best model found")
-                        best_metric = f1_score
-                        torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
-                    print("Best metric: ", best_metric)
-                    self.model.train()
-                
                 current_step += 1
                 loss.backward()
                 optimizer.step()
                 scheduler.step()
                 optimizer.zero_grad()
                 progress_bar.update(1)
-            if eval_every_epoch == True:
-                print("Epoch: ", epoch)
-                print("Loss: ", loss.item())
-                eval_metrics = self.eval(val_ds)
-                print("Eval metrics: ", eval_metrics)
-                f1_score = eval_metrics["f1"]
-                if f1_score > best_metric:
-                    print("New best model found")
-                    best_metric = f1_score
-                    torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
-                print("Best metric: ", best_metric)
-                self.model.train()
-        return self.model, best_metric
+            print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
+            eval_metrics = self.eval(val_ds)
+            print("Eval metrics: ", format_metrics(eval_metrics))
+            f1_score = eval_metrics["f1_weighted"]
+            if f1_score > min(best_metrics):
+                best_metrics.remove(min(best_metrics))
+                best_metrics.append(f1_score)
+                torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth" + str(f1_score)))
+            print("Best metrics: ", best_metrics)
+            self.model.train()
+        return best_metrics
         

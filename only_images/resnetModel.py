@@ -8,7 +8,7 @@ import ast
 from PIL import Image
 from NLPtests.FakeNewsDataset import collate_fn
 from tqdm.auto import tqdm
-from NLPtests.utils import compute_metrics
+from NLPtests.utils import compute_metrics, format_metrics
 
 class Model(nn.Module):
     def __init__(self):
@@ -46,7 +46,7 @@ class Model(nn.Module):
         
         embeddings_images = torch.cat(embeddings_images, dim=0)
        
-        
+        embeddings_images = self.relu(embeddings_images)
 
         embeddings = self.linear1(embeddings_images)
         embeddings = self.layernorm(embeddings)
@@ -102,7 +102,7 @@ class ResnetModel():
         return metrics
 
     
-    def train(self, train_ds, val_ds, lr = 5e-5, eval_every_epoch= False, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./"):
+    def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./"):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.train()
         self.model.to(device)
@@ -127,7 +127,8 @@ class ResnetModel():
         progress_bar = tqdm(range(num_training_steps))
         current_step = 0
         # save the best model
-        best_metric = 0
+        best_metrics = [0, 0, 0, 0, 0]
+        print("accuracy | precision | recall | f1 | f1_weighted | f1_for_each_class")
         for epoch in range(num_epochs):
             for batch in dataloader:
                 
@@ -153,18 +154,7 @@ class ResnetModel():
                 logits = outputs[0]
                 loss = criterion(logits, labels)
 
-                
-                if (current_step % num_eval_steps == 0 and eval_every_epoch == False):
-                    print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
-                    eval_metrics = self.eval(val_ds)
-                    print("Eval metrics: ", eval_metrics)
-                    f1_score = eval_metrics["f1"]
-                    if f1_score > best_metric:
-                        print("New best model found")
-                        best_metric = f1_score
-                        torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
-                    print("Best metric: ", best_metric)
-                    self.model.train()
+
                 
                 current_step += 1
                 loss.backward()
@@ -172,14 +162,14 @@ class ResnetModel():
                 scheduler.step()
                 optimizer.zero_grad()
                 progress_bar.update(1)
-            if eval_every_epoch == True:
-                print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
-                eval_metrics = self.eval(val_ds)
-                print("Eval metrics: ", eval_metrics)
-                f1_score = eval_metrics["f1"]
-                if f1_score > best_metric:
-                    print("New best model found")
-                    best_metric = f1_score
-                    torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
-                print("Best metric: ", best_metric)
-                self.model.train()
+            print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
+            eval_metrics = self.eval(val_ds)
+            print("Eval metrics: ", format_metrics(eval_metrics))
+            f1_score = eval_metrics["f1_weighted"]
+            if f1_score > min(best_metrics):
+                best_metrics.remove(min(best_metrics))
+                best_metrics.append(f1_score)
+                torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth" + str(f1_score)))
+            print("Best metrics: ", best_metrics)
+            self.model.train()
+        return best_metrics

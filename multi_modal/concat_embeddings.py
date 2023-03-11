@@ -6,7 +6,7 @@ import torch.nn as nn
 from tqdm.auto import tqdm
 import os
 import numpy as np
-from NLPtests.utils import compute_metrics
+from NLPtests.utils import compute_metrics, format_metrics
 import random
 import cv2
 from detectron2 import model_zoo
@@ -273,7 +273,8 @@ class Concatenated_Model():
         progress_bar = tqdm(range(num_training_steps))
         current_step = 0
         # save the best model
-        best_metric = 0
+        best_metrics = [0, 0, 0, 0, 0]
+        print("accuracy | precision | recall | f1 | f1_weighted | f1_for_each_class")
         for epoch in range(num_epochs):
             for batch in dataloader:
                 texts = batch["text"]
@@ -323,16 +324,14 @@ class Concatenated_Model():
                 optimizer.zero_grad()
                 progress_bar.update(1)
                 current_step += 1
-            print("Epoch: ", epoch)
-            print("Loss: ", loss.item())
+            print("Epoch: ", epoch, " | Step: ", current_step, " | Loss: ", loss.item())
             eval_metrics = self.eval(eval_ds, tokenization_strategy= tokenization_strategy, batch_size=batch_size)
-            print("Eval metrics: ", eval_metrics)
-            f1_score = eval_metrics["f1"]
-            if f1_score > best_metric:
-                print("New best model found")
-                best_metric = f1_score
-                torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth"))
-            print("Best metric: ", best_metric)
+            print("Eval metrics: ", format_metrics(eval_metrics))
+            f1_score = eval_metrics["f1_weighted"]
+            if f1_score > min(best_metrics):
+                best_metrics.remove(min(best_metrics))
+                best_metrics.append(f1_score)
+                torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth" + str(f1_score)))
+            print("Best metrics: ", best_metrics)
             self.model.train()
-
-        return best_metric
+        return best_metrics

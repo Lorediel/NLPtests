@@ -32,6 +32,7 @@ class Model(nn.Module):
         embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)
 
+
         embeddings = self.linear2(embeddings)
         embeddings = self.layer_norm2(embeddings)
         embeddings = self.dropout(embeddings)
@@ -143,7 +144,7 @@ class BertModel():
         progress_bar = tqdm(range(num_training_steps))
         current_step = 0
         # save the best model
-        best_metrics = [0,0,0]
+        best_metrics = [0, 0, 0, 0, 0]
         print("accuracy | precision | recall | f1 | f1_weighted | f1_for_each_class")
         for epoch in range(num_epochs):
             for batch in dataloader:
