@@ -156,4 +156,10 @@ def display_confusion_matrix(ground_truth, preds):
     plt.show()
 
 if __name__ == '__main__':
-    pass
+    # make a random list of predictions and ground truth of length 1000
+    preds = [random.randint(0,3) for i in range(1000)]
+    ground_truth = [0] * 100 + [1] * 300 + [2] * 350 + [3] * 250
+    random.Random().shuffle(ground_truth)
+
+    print(compute_metrics(preds, ground_truth)) 
+    print(compute_metrics(ground_truth, preds))

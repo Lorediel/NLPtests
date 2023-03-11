@@ -121,6 +121,10 @@ class BertModel():
             display_confusion_matrix(total_preds, total_labels)
         return metrics
     
+    def load_model(self, path):
+        self.model.load_state_dict(torch.load(path))
+        return self.model
+
     def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./", tokenization_strategy = "first", focal_loss = False):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.train()
@@ -186,3 +190,5 @@ class BertModel():
             print("Best metrics: ", best_metrics)
             self.model.train()
         return self.model
+    
+    

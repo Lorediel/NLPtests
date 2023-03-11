@@ -127,7 +127,7 @@ class ClipModel:
         else:
             raise ValueError(f"tokenization_strategy {tokenization_strategy} not supported")
 
-    def eval(self, ds, tokenization_strategy = "first", batch_size=8):
+    def eval(self, ds, tokenization_strategy = "first", batch_size=8, print_confusion_matrix=False):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.eval()
         dataloader = torch.utils.data.DataLoader(
@@ -176,7 +176,9 @@ class ClipModel:
                 total_preds += list(preds)
                 total_labels += list(labels)
                 progress_bar.update(1)
-        metrics = compute_metrics(total_labels, total_preds)
+        metrics = compute_metrics(total_preds, total_labels)
+        if print_confusion_matrix:
+            display_confusion_matrix(total_preds, total_labels)
         return metrics
 
 

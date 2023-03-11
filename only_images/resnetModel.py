@@ -94,7 +94,7 @@ class ResnetModel():
                 total_preds += list(preds)
                 total_labels += list(labels)
                 progress_bar.update(1)
-        metrics = compute_metrics(total_labels, total_preds)
+        metrics = compute_metrics(total_preds, total_labels)
         return metrics
 
     

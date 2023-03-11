@@ -146,7 +146,7 @@ class BertResnetConcatModel():
                 total_preds += list(preds)
                 total_labels += list(labels)
                 progress_bar.update(1)
-        metrics = compute_metrics(total_labels, total_preds)
+        metrics = compute_metrics(total_preds, total_labels)
         return metrics
 
     def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, eval_every_epoch = False, save_path = "./", tokenization_strategy = "first"):
