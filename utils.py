@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import numpy as np
 from torch.utils.data import Dataset, Subset
 import pandas as pd
-from FakeNewsDataset import FakeNewsDataset
+#from FakeNewsDataset import FakeNewsDataset
 import collections
 import random
 
@@ -180,7 +180,7 @@ def get_confusion_matrix(preds, ground_truth):
     return confusion_matrix(ground_truth, preds)
 
 if __name__ == '__main__':
-    
+    """
     ds = FakeNewsDataset('/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv', '/Users/lorenzodamico/Documents/Uni/tesi/content/Media')
     t, v = stratifiedSplit(ds)
 
@@ -217,3 +217,4 @@ if __name__ == '__main__':
                 labels_count["article_3"] += 1
 
     print(labels_count)
+    """
