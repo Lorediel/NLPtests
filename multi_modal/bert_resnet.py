@@ -231,4 +231,8 @@ class BertResnetConcatModel():
             print("Best metrics: ", best_metrics)
             self.model.train()
 
+        return best_metrics
+    
+    def load_model(self, path):
+        self.model.load_state_dict(torch.load(path))
         return self.model

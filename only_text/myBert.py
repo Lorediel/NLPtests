@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from transformers import ResNetModel, BertModel, AutoModel,  AutoTokenizer, AutoImageProcessor, AdamW, get_scheduler
 from tqdm.auto import tqdm
-from NLPtests.utils import compute_metrics, format_metrics
+from NLPtests.utils import compute_metrics, format_metrics, display_confusion_matrix
 from NLPtests.FakeNewsDataset import collate_fn
 import os
 from NLPtests.focal_loss import FocalLoss
@@ -71,6 +71,7 @@ class BertModel():
                 tl = len(token_list)
                 if tl>max_len:
                     new_tokens = token_list[:half_len] + token_list[-half_len:]
+                    new_tokens[-1] = [103]
                     attention_mask = [1] * max_len
                 elif tl<=max_len:
                     # add padding
@@ -85,7 +86,7 @@ class BertModel():
             raise ValueError(f"tokenization_strategy {tokenization_strategy} not supported")
         
     
-    def eval(self, ds, tokenization_strategy, batch_size = 8):
+    def eval(self, ds, tokenization_strategy, batch_size = 8, print_confusion_matrix = False):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.eval()
         dataloader = torch.utils.data.DataLoader(
@@ -115,8 +116,9 @@ class BertModel():
                 total_preds += list(preds)
                 total_labels += list(labels)
                 progress_bar.update(1)
-        progress_bar.close()
-        metrics = compute_metrics(total_labels, total_preds)
+        metrics = compute_metrics(total_preds, total_labels)
+        if print_confusion_matrix:
+            display_confusion_matrix(total_preds, total_labels)
         return metrics
     
     def train(self, train_ds, val_ds, lr = 5e-5, batch_size= 8, num_epochs = 3, warmup_steps = 0, num_eval_steps = 10, save_path = "./", tokenization_strategy = "first", focal_loss = False):

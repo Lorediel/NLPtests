@@ -93,50 +93,6 @@ class Model(nn.Module):
         probs = self.softmax(logits)
         return logits, probs
 
-    def calculate_feats_patches(self, model, x_image):
-        visual_embeds = []
-        model.eval()
-        inputs = []
-        for pil_img in x_image:
-            #convert PIL image to cv image
-            open_cv_image = np.array(pil_img) 
-            image = open_cv_image[:, :, ::-1].copy()
-            height, width = image.shape[:2]
-            image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
-            inputs.append({"image": image, "height": height, "width": width})
-
-        with torch.no_grad():
-            images = model.preprocess_image(inputs)  # don't forget to preprocess
-            features = model.backbone(images.tensor)  # set of cnn features
-            proposals, _ = model.proposal_generator(images, features, None)  # RPN
-
-            for i in range(len(proposals)):
-                # features_ = [torch.stack([features[f][i]]) for f in model.roi_heads.box_in_features]
-                features_single = {}
-                features_ = []
-                for f in model.roi_heads.box_in_features:
-                    tensor = torch.stack([features[f][i]])
-                    features_.append(tensor)
-                    features_single[f] = tensor
-
-                box_features = model.roi_heads.box_pooler(features_, [proposals[i].proposal_boxes])
-                box_features = model.roi_heads.box_head(box_features)  # features of all 1k candidates
-                predictions = model.roi_heads.box_predictor(box_features)
-                pred_instances, pred_inds = model.roi_heads.box_predictor.inference(predictions, [proposals[i]])
-                pred_instances = model.roi_heads.forward_with_given_boxes(features_single, pred_instances)
-                # output boxes, masks, scores, etc
-                pred_instances = model._postprocess(pred_instances, inputs,
-                                                    images.image_sizes)  # scale box to orig size
-                
-                for i in range(len(pred_inds)):
-                  if pred_inds[i].nelement() == 0:
-                    pred_inds[i] = torch.tensor([0]).to("cuda")
-                # features of the proposed boxes
-                feats = box_features[pred_inds]
-                visual_embeds.append(feats)
-
-        return visual_embeds
-
 
 
 

@@ -7,43 +7,7 @@ import pandas as pd
 #from FakeNewsDataset import FakeNewsDataset
 import collections
 import random
-
-
-def splitTrainTestVal2(filepath, dataset, delete_date = False):
-    indexes = take_per_type_label_indexes(dataset)
-    train_indexes = []
-    validation_indexes = []
-    for k,v in indexes.items():
-        t_i, v_i = get_train_val_indexes(v)
-        train_indexes += t_i
-        validation_indexes += v_i
-    
-    data_files = {"train": filepath}
-    dataset_dict = load_dataset("csv", data_files=filepath, delimiter="\t")
-    if (delete_date):
-        dataset_dict = dataset_dict.remove_columns(["Date"])
-    dataset = dataset_dict["train"]
-    # split the dataset based on train_indexes and validation
-    train_ds = dataset.select(train_indexes)
-    validation_ds = dataset.select(validation_indexes)
-    # gather everyone if you want to have a single DatasetDict
-    train_test_valid_dataset = DatasetDict({
-    'train': train_ds,
-    'valid': validation_ds})
-    return train_test_valid_dataset
-
-
-
-def build_dataloaders(tokenized_ds, data_collator, batch_size = 8):
-        train_dataloader = DataLoader(
-        tokenized_ds["train"], shuffle=True, batch_size=batch_size, collate_fn=data_collator
-        )
-        eval_dataloader = DataLoader(
-            tokenized_ds["valid"], batch_size=batch_size, collate_fn=data_collator
-        )
-
-        return train_dataloader, eval_dataloader
-
+import matplotlib.pyplot as plt
 def compute_precision(preds, ground_truth, average = 'macro'):
     return precision_score(ground_truth, preds, average=average, zero_division=1)
 
@@ -186,42 +150,10 @@ def cf1(percents, n_samples):
 def get_confusion_matrix(preds, ground_truth):
     return confusion_matrix(ground_truth, preds)
 
+def display_confusion_matrix(ground_truth, preds):
+    cm = get_confusion_matrix(preds, ground_truth)
+    ConfusionMatrixDisplay(cm, display_labels=["Certainly Fake", "Probably Fake", "Probably Real", "Certainly Real"]).plot()
+    plt.show()
+
 if __name__ == '__main__':
-    """
-    ds = FakeNewsDataset('/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv', '/Users/lorenzodamico/Documents/Uni/tesi/content/Media')
-    t, v = stratifiedSplit(ds)
-
-    labels_count = {
-        "tweet_0": 0,
-        "tweet_1": 0,
-        "tweet_2": 0,
-        "tweet_3": 0,
-        "article_0": 0,
-        "article_1": 0,
-        "article_2": 0,
-        "article_3": 0
-    }
-
-    for i in range(len(v)):
-        x = v[i]
-        if (x["type"] == "tweet"):
-            if (x["label"] == 0):
-                labels_count["tweet_0"] += 1
-            elif (x["label"] == 1):
-                labels_count["tweet_1"] += 1
-            elif (x["label"] == 2):
-                labels_count["tweet_2"] += 1
-            elif (x["label"] == 3):
-                labels_count["tweet_3"] += 1
-        else:
-            if (x["label"] == 0):
-                labels_count["article_0"] += 1
-            elif (x["label"] == 1):
-                labels_count["article_1"] += 1
-            elif (x["label"] == 2):
-                labels_count["article_2"] += 1
-            elif (x["label"] == 3):
-                labels_count["article_3"] += 1
-
-    print(labels_count)
-    """
+    pass
