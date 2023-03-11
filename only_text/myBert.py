@@ -25,8 +25,6 @@ class Model(nn.Module):
 
     def forward(self, input_ids, attention_mask):
         
-
-
         embeddings_text = self.bert(input_ids = input_ids, attention_mask = attention_mask).pooler_output
 
         embeddings = self.linear1(embeddings_text)
@@ -90,7 +88,7 @@ class BertModel():
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.eval()
         dataloader = torch.utils.data.DataLoader(
-            ds, batch_size=batch_size,shuffle=True, collate_fn = collate_fn
+            ds, batch_size=batch_size, collate_fn = collate_fn
         )
         total_preds = []
         total_labels = []
@@ -120,6 +118,7 @@ class BertModel():
         if print_confusion_matrix:
             display_confusion_matrix(total_preds, total_labels)
         return metrics
+    
     
     def load_model(self, path):
         self.model.load_state_dict(torch.load(path))
