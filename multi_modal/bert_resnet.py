@@ -29,6 +29,8 @@ class Model(nn.Module):
         # Image embeddings extraction from resnet
         i_embeddings = self.resnet(pixel_values = pixel_values).pooler_output
         i_embeddings = self.flatten(i_embeddings)
+
+        
         #compute the max of the embeddings
         embeddings_images = []
         base = 0
@@ -37,7 +39,7 @@ class Model(nn.Module):
             max_tensor, _ = torch.max(tensor, dim=0, keepdim=True)
             embeddings_images.append(max_tensor)
             base += nums_images[i]
-        
+    
         embeddings_images = torch.cat(embeddings_images, dim=0)
 
         #textual embeddings extraction from bert

@@ -20,6 +20,7 @@ class Model(nn.Module):
         self.flatten = nn.Flatten(1,-1)
         self.linear1 = nn.Linear(1280, 1280)
         self.layer_norm = nn.LayerNorm(1280)
+        self.linear2 = nn.Linear(1280, 1280)
         self.dropout = nn.Dropout(0.1)
         self.linear3 = nn.Linear(1280, 4)
         self.relu = nn.ReLU()
@@ -43,6 +44,12 @@ class Model(nn.Module):
         embeddings = self.layer_norm(embeddings)
         embeddings = self.dropout(embeddings)
         embeddings = self.relu(embeddings)
+
+        embeddings = self.linear2(embeddings)
+        embeddings = self.layer_norm(embeddings)
+        embeddings = self.dropout(embeddings)
+        embeddings = self.relu(embeddings)
+
 
         logits = self.linear3(embeddings)
         
