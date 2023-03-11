@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import numpy as np
 from torch.utils.data import Dataset, Subset
 import pandas as pd
-#from FakeNewsDataset import FakeNewsDataset
+from FakeNewsDataset import FakeNewsDataset
 import collections
 import random
 
@@ -180,8 +180,40 @@ def get_confusion_matrix(preds, ground_truth):
     return confusion_matrix(ground_truth, preds)
 
 if __name__ == '__main__':
-    pass
-    #ds = FakeNewsDataset('/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv', '/Users/lorenzodamico/Documents/Uni/tesi/content/Media')
-    #t, v = stratifiedSplit(ds)
-
     
+    ds = FakeNewsDataset('/Users/lorenzodamico/Documents/Uni/tesi/NLPtests/MULTI-Fake-Detective_Task1_Data.tsv', '/Users/lorenzodamico/Documents/Uni/tesi/content/Media')
+    t, v = stratifiedSplit(ds)
+
+    labels_count = {
+        "tweet_0": 0,
+        "tweet_1": 0,
+        "tweet_2": 0,
+        "tweet_3": 0,
+        "article_0": 0,
+        "article_1": 0,
+        "article_2": 0,
+        "article_3": 0
+    }
+
+    for i in range(len(v)):
+        x = v[i]
+        if (x["type"] == "tweet"):
+            if (x["label"] == 0):
+                labels_count["tweet_0"] += 1
+            elif (x["label"] == 1):
+                labels_count["tweet_1"] += 1
+            elif (x["label"] == 2):
+                labels_count["tweet_2"] += 1
+            elif (x["label"] == 3):
+                labels_count["tweet_3"] += 1
+        else:
+            if (x["label"] == 0):
+                labels_count["article_0"] += 1
+            elif (x["label"] == 1):
+                labels_count["article_1"] += 1
+            elif (x["label"] == 2):
+                labels_count["article_2"] += 1
+            elif (x["label"] == 3):
+                labels_count["article_3"] += 1
+
+    print(labels_count)
