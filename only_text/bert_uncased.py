@@ -181,6 +181,6 @@ class BertModel():
                 best_metrics.remove(min(best_metrics))
                 best_metrics.append(f1_score)
                 torch.save(self.model.state_dict(), os.path.join(save_path, "best_model.pth" + str(f1_score)))
-            print("Best metric: ", format_metrics(best_metrics))
+            print("Best metrics: ", best_metrics)
             self.model.train()
         return self.model

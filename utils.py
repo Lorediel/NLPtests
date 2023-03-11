@@ -76,8 +76,8 @@ def compute_metrics(preds, ground_truth):
 def format_metrics(metrics):
     formatted = ""
     for k,v in metrics.items():
-        formatted += v + "\t "
-    formatted[-1] = ""
+        formatted += str(v) + "\t "
+    formatted = formatted[:-1]
     return formatted
 
 def take_per_type_label_indexes(dataset):
