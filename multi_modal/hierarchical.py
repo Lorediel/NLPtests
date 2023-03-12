@@ -244,7 +244,7 @@ class ClipModel:
             train_ds, batch_size=batch_size, shuffle=True, collate_fn = collate_fn
         )
         
-        criterion = nn.CrossEntropyLoss()
+        criterion = nn.BCEWithLogitsLoss()
         
         self.model.train()
         # Initialize the optimizer
