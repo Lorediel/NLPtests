@@ -9,6 +9,7 @@ from PIL import Image
 from NLPtests.FakeNewsDataset import collate_fn
 from tqdm.auto import tqdm
 from NLPtests.utils import compute_metrics, format_metrics
+import random
 
 class Model(nn.Module):
     def __init__(self):
