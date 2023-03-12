@@ -137,7 +137,7 @@ class BertModel():
             train_ds, batch_size=batch_size, shuffle=True, collate_fn = collate_fn
         )
         if focal_loss:
-            criterion = FocalLoss(gamma=2, reduction="sum")
+            criterion = FocalLoss(gamma=2, reduction='mean', alpha=0.25)
         else:
             criterion = nn.CrossEntropyLoss()
         # Initialize the optimizer
