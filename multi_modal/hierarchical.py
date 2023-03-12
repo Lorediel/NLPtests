@@ -32,6 +32,8 @@ def post_process_logits(logits):
 
     new_logits = torch.stack((new_log_fake, new_log_real, new_log_cert_fake, new_log_prob_fake,new_log_prob_real, new_log_cert_real), dim=1)
 
+    return new_logits
+
 def post_process_labels(labels):
     # 0: fake, 1: real, 2: cert_fake, 3: prob_fake, 4: prob_real, 5: cert_real
     label_dict = {
@@ -223,7 +225,7 @@ class ClipModel:
                     attention_mask=t_inputs["attention_mask"],
                     pixel_values=i_inputs.pixel_values
                 )
-                inference_logits = logits_for_inference(logits)
+                inference_logits = logits_for_inference(logits).to(device)
                 preds = torch.argmax(inference_logits, dim=1).detach().cpu().numpy()
                 total_preds += list(preds)
                 total_labels += list(labels)
@@ -242,7 +244,7 @@ class ClipModel:
             train_ds, batch_size=batch_size, shuffle=True, collate_fn = collate_fn
         )
         
-        criterion = nn.BCEwithLogitsLoss(reduction='sum')
+        criterion = nn.BCEWithLogitsLoss(reduction='sum')
         
         self.model.train()
         # Initialize the optimizer
@@ -299,8 +301,8 @@ class ClipModel:
                 
                 logits = outputs[0]
 
-                new_logits = post_process_logits(logits)
-                new_labels = post_process_labels(labels)
+                new_logits = post_process_logits(logits).to(device)
+                new_labels = post_process_labels(labels).to(device)
                 
                 
                 loss = criterion(new_logits, new_labels)
@@ -327,18 +329,3 @@ class ClipModel:
         self.model.load_state_dict(torch.load(path))
         return self.model
                 
-
-"""
-model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14")
-processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
-
-
-url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-image = Image.open(requests.get(url, stream=True).raw)
-
-inputs = processor(text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="pt", padding=True)
-
-outputs = model(**inputs)
-logits_per_image = outputs.logits_per_image # this is the image-text similarity score
-probs = logits_per_image.softmax(dim=1) # we can take the softmax to get the label probabilities
-"""
