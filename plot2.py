@@ -378,6 +378,8 @@ def count_letters_df(type = None):
         2: round(percent_capital_letters_label_2/samples_label_2, 3),
         3: round(percent_capital_letters_label_3/samples_label_3, 3)
     }
+
+
     
     ax = plt.gca()
     ymax = max(vals_for_label.values())
@@ -435,6 +437,7 @@ def count_letters_df2(type = None):
             total_letters_label_3 += num_letters
             total_capital_letters_label_3 += num_capital_letters
 
+
     vals_for_label = {
         0: round(total_capital_letters_label_0/total_letters_label_0,3),
         1: round(total_capital_letters_label_1/total_letters_label_1,3),
@@ -442,7 +445,95 @@ def count_letters_df2(type = None):
         3: round(total_capital_letters_label_3/total_letters_label_3,3)
     }
 
+
+
     return vals_for_label
+
+
+# average percentage of capital letters per label
+def count_letters_df3(type = None):
+    if type != None and type != "tweet" and type != "article":
+        raise ValueError("type must be 'tweet' or 'article'")
+    df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
+    df = df.reset_index()
+
+    # use computer modern font
+    plt.rcParams['mathtext.fontset'] = 'cm'
+    plt.rcParams['font.family'] = 'STIXGeneral'
+
+    # increase font size
+    plt.rcParams.update({'font.size': 18})
+
+    normalized_capital_letters_label_0 = []
+    normalized_capital_letters_label_1 = []
+    normalized_capital_letters_label_2 = []
+    normalized_capital_letters_label_3 = []
+
+    for index, row in df.iterrows():
+        text = row['Text']
+        num_letters = len(text)
+        num_capital_letters = count_capital_letters(text)
+        label = row['Label']
+        t = row["Type"]
+        if type != None:
+            if t != type:
+                continue
+        if label == 0:
+            normalized_capital_letters_label_0.append(num_capital_letters/num_letters)
+        elif label == 1:
+            normalized_capital_letters_label_1.append(num_capital_letters/num_letters)
+        elif label == 2:
+            normalized_capital_letters_label_2.append(num_capital_letters/num_letters)
+        elif label == 3:
+            normalized_capital_letters_label_3.append(num_capital_letters/num_letters)
+
+    # compute mean and std
+    mean_label_0 = np.mean(normalized_capital_letters_label_0)
+    std_label_0 = np.std(normalized_capital_letters_label_0)
+    mean_label_1 = np.mean(normalized_capital_letters_label_1)
+    std_label_1 = np.std(normalized_capital_letters_label_1)
+    mean_label_2 = np.mean(normalized_capital_letters_label_2)
+    std_label_2 = np.std(normalized_capital_letters_label_2)
+    mean_label_3 = np.mean(normalized_capital_letters_label_3)
+    std_label_3 = np.std(normalized_capital_letters_label_3)
+
+    means_for_label = {
+        0: round(mean_label_0 * 100,1),
+        1: round(mean_label_1 * 100,1),
+        2: round(mean_label_2 * 100,1),
+        3: round(mean_label_3 * 100,1)
+    }
+
+    stds_for_label = {
+        0: round(std_label_0 * 100,1),
+        1: round(std_label_1 * 100,1),
+        2: round(std_label_2 * 100,1),
+        3: round(std_label_3 * 100,1)
+    }
+
+    # plot
+
+    ax = plt.gca()
+    ymax = 0
+    for i in range(len(means_for_label)):
+        if means_for_label[i] + stds_for_label[i] > ymax:
+            ymax = means_for_label[i] + stds_for_label[i]
+    ax.set_ylim([0, ymax + 0.05])
+
+    x = list(label_names.values())
+    y = list(means_for_label.values())
+    e = list(stds_for_label.values())
+    
+    if type == None:
+        plt.title("Average percentage of capital letters in texts per label")
+    else:
+        plt.title("Average percentage of capital letters in texts per label (" + type + ")")
+    barplot = plt.bar(label_names.values(), means_for_label.values(), color=[colors['red'], colors['yellow'], colors['green'], colors['blue']])
+    plt.bar_label(barplot, label_type="edge", labels=['                        ' + str(v) + '%' for v in means_for_label.values()])
+    plt.errorbar(x,y,e, linestyle='None', marker='', color="black")
+
+    plt.show()
+    
 
             
 def count_capital_letters(text):
@@ -508,46 +599,7 @@ def plot_scatter_length_capital(t = None):
 if __name__ == "__main__":
     #df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
     #df = df.reset_index()
-    tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
-    length_bins(5, "tweet", tokenizer)
     
-    """
-    texts  = []
-    texts_urls = []
-    duplicated_urls = []
-    duplicates = []
-    labels = []
-    duplicated_labels = []
-    for i, rows in df.iterrows():
-        t = rows["Text"][:100]
-        u = rows["URL"]
-        
-        if t in texts:
-            duplicates.append(t)
-            duplicated_urls.append(u)
-            # find index of duplicate in texts
-            index = texts.index(t)
-            # get url of duplicate
-            url = texts_urls[index]
-            # get label of duplicate
-            label = labels[index]
-            duplicated_labels.append(label)
-
-            # print duplicate and url
-            print("Duplicate: " + t)
-            print("URL: " + u)
-            print("Duplicate URL: " + url)
-            print("")
-            
-        else:
-            texts.append(t)
-            texts_urls.append(u)
-            labels.append(rows["Label"])
-    print("Number of duplicates: " + str(len(duplicates)))
-    """
-
-
-
-
-
-
+    
+    c = count_letters_df3()
+    

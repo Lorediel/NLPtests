@@ -36,8 +36,6 @@ class Model(nn.Module):
         embeddings_images = self.flatten(i_embeddings)
         #compute the max of the embeddings
         
-        
-        embeddings_images = torch.cat(embeddings_images, dim=0)
        
         embeddings_images = self.relu(embeddings_images)
 
