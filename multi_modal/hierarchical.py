@@ -224,7 +224,7 @@ class ClipModel:
                     attention_mask=t_inputs["attention_mask"],
                     pixel_values=i_inputs.pixel_values
                 )
-                inference_logits = logits_for_inference(logits).to(device)
+                inference_logits = logits_for_inference(probs).to(device)
                 preds = torch.argmax(inference_logits, dim=1).detach().cpu().numpy()
                 total_preds += list(preds)
                 total_labels += list(labels)
@@ -243,7 +243,7 @@ class ClipModel:
             train_ds, batch_size=batch_size, shuffle=True, collate_fn = collate_fn
         )
         
-        criterion = nn.BCEWithLogitsLoss()
+        criterion = nn.BCELoss()
         
         self.model.train()
         # Initialize the optimizer
@@ -298,7 +298,7 @@ class ClipModel:
                     pixel_values=i_inputs.pixel_values
                 )
                 
-                logits = outputs[0]
+                logits = outputs[1]
 
                 new_logits = post_process_logits(logits).to(device)
                 new_labels = post_process_labels(labels).to(device).float()
