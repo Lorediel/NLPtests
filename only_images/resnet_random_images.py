@@ -29,7 +29,7 @@ class Model(nn.Module):
         self.softmax = nn.Softmax(dim=1)
         
 
-    def forward(self, pixel_values, nums_images):
+    def forward(self, pixel_values):
         
         
         i_embeddings = self.base_model(pixel_values = pixel_values).pooler_output
