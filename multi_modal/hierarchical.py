@@ -118,7 +118,6 @@ class Model(nn.Module):
 
         logits = self.linear3(embeddings)
 
-        logits = post_process_logits(logits)
         probs = self.softmax(logits)
 
         return logits, probs
