@@ -244,7 +244,7 @@ class ClipModel:
             train_ds, batch_size=batch_size, shuffle=True, collate_fn = collate_fn
         )
         
-        criterion = nn.BCEWithLogitsLoss(reduction='sum')
+        criterion = nn.CrossEntropyLoss()
         
         self.model.train()
         # Initialize the optimizer
@@ -302,7 +302,7 @@ class ClipModel:
                 logits = outputs[0]
 
                 new_logits = post_process_logits(logits).to(device)
-                new_labels = post_process_labels(labels).to(device)
+                new_labels = post_process_labels(labels).to(device).float()
                 
                 
                 loss = criterion(new_logits, new_labels)
