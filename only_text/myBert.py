@@ -73,7 +73,7 @@ class BertModel():
                 tl = len(token_list)
                 if tl>max_len:
                     new_tokens = token_list[:half_len] + token_list[-half_len:]
-                    new_tokens[-1] = [103]
+                    new_tokens[-1] = 103
                     attention_mask = [1] * max_len
                 elif tl<=max_len:
                     # add padding
