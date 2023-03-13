@@ -597,9 +597,31 @@ def plot_scatter_length_capital(t = None):
 
     
 if __name__ == "__main__":
-    #df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
-    #df = df.reset_index()
+    df = pd.read_csv('./MULTI-Fake-Detective_Task1_Data.tsv', sep='\t').drop_duplicates(keep="first", ignore_index=True)
+    df = df.reset_index()
+
+    samples_for_label = {
+        0: 0,
+        1: 0,
+        2: 0,
+        3: 0
+    }
     
-    
-    c = count_letters_df3()
-    
+    for index, row in df.iterrows():
+        label = row['Label']
+        samples_for_label[label] += 1
+
+    # compute the inverse of frequency of each label
+    total_samples = sum(samples_for_label.values())
+    for label in samples_for_label:
+        samples_for_label[label] = total_samples / samples_for_label[label]
+
+    # normalize the inverse of frequency of each label to sum to 1
+    total = sum(samples_for_label.values())
+    for label in samples_for_label:
+        samples_for_label[label] = samples_for_label[label] / total
+
+    for label in samples_for_label:
+        samples_for_label[label] = round(samples_for_label[label], 2)
+
+    print("Inverse of frequency of each label: " + str(samples_for_label))

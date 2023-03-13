@@ -8,7 +8,7 @@ import ast
 from PIL import Image
 from NLPtests.FakeNewsDataset import collate_fn
 from tqdm.auto import tqdm
-from NLPtests.utils import compute_metrics, format_metrics
+from NLPtests.utils import compute_metrics, format_metrics, display_confusion_matrix
 import random
 
 class Model(nn.Module):
@@ -57,7 +57,7 @@ class ResnetModel():
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.to(self.device)
 
-    def eval(self, ds, batch_size = 8):
+    def eval(self, ds, batch_size = 8, print_confusion_matrix = False):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model.eval()
         dataloader = torch.utils.data.DataLoader(
@@ -97,6 +97,8 @@ class ResnetModel():
                 total_labels += list(labels)
                 progress_bar.update(1)
         metrics = compute_metrics(total_preds, total_labels)
+        if print_confusion_matrix:
+            display_confusion_matrix(total_preds, total_labels)
         return metrics
 
     
