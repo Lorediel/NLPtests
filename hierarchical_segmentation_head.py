@@ -4,7 +4,7 @@ import torch
 
 class SegmentationHead(nn.Module):
     def __init__(self, input_size):
-        super(Model, self).__init__()
+        super(SegmentationHead, self).__init__()
 
         self.firstClassificator = nn.Sequential(
             nn.Linear(input_size, input_size),
@@ -37,11 +37,17 @@ class SegmentationHead(nn.Module):
         fake_or_real_logits = self.firstClassificator(x)
         # take the max of the logits
         fake_or_real = torch.argmax(fake_or_real_logits, dim=1)
-        if fake_or_real == 0:
-            # fake
-            fake_logits = self.fakeClassificator(x)
-            return ("fake", fake_logits)
-        else:
-            # real
-            real_logits =  self.realClassificator(x)
-            return ("real", real_logits)
+        fake_array = []
+        final_logits = []
+        for f in fake_or_real: 
+            if fake_or_real == 0:
+                # fake
+                fake_array.append("fake")
+                fake_logits = self.fakeClassificator(x)
+                final_logits.append(fake_logits)
+            else:
+                # real
+                fake_array.append("real")
+                real_logits =  self.realClassificator(x)
+                final_logits.append(real_logits)
+        return fake_array, torch.tensor(final_logits)

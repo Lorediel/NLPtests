@@ -15,23 +15,23 @@ class Model(nn.Module):
         self.bert = AutoModel.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
         self.tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
         self.tokenizerLast = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased", padding_side = 'left', truncation_side = 'left')
-        self.segmentation_head = SegmentationHead(512)
+        self.segmentation_head = SegmentationHead(768)
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, input_ids, attention_mask):
         
         embeddings_text = self.bert(input_ids = input_ids, attention_mask = attention_mask).pooler_output
 
-        all_logits = self.segmentation_head(embeddings_text) # logits = [batch_size, 2]
+        fake_array, all_logits = self.segmentation_head(embeddings_text) # logits = [batch_size, 2]
 
         final_probabilities = []
 
-        for logits in all_logits:
-            if logits[0] == "fake":
-                fake_prob = self.softmax(logits[1])
+        for i in range(len(fake_array)):
+            if fake_array[i] == "fake":
+                fake_prob = self.softmax(all_logits[i])
                 final_probabilities += [[0,0] +fake_prob[0].tolist()]
-            elif logits[0] == "real":
-                real_prob = self.softmax(logits[1])
+            else:
+                real_prob = self.softmax(all_logits[i])
                 final_probabilities += [real_prob[0].tolist() + [0,0]]
 
         final_probabilities = torch.tensor(final_probabilities).to(self.device)
