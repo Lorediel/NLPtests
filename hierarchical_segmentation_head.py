@@ -40,7 +40,7 @@ class SegmentationHead(nn.Module):
         fake_array = []
         final_logits = []
         for f in fake_or_real: 
-            if fake_or_real == 0:
+            if f == 0:
                 # fake
                 fake_array.append("fake")
                 fake_logits = self.fakeClassificator(x)
