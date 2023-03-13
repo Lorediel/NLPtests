@@ -112,7 +112,7 @@ class BertResnetConcatModel():
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model.eval()
         dataloader = torch.utils.data.DataLoader(
-            ds, batch_size=batch_size,shuffle=True, collate_fn = collate_fn
+            ds, batch_size=batch_size,collate_fn = collate_fn
         )
         total_preds = []
         total_labels = []

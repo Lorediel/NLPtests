@@ -8,6 +8,7 @@ import pandas as pd
 import collections
 import random
 import matplotlib.pyplot as plt
+import torch
 def compute_precision(preds, ground_truth, average = 'macro'):
     return precision_score(ground_truth, preds, average=average, zero_division=1)
 
@@ -154,6 +155,13 @@ def display_confusion_matrix(ground_truth, preds):
     cm = get_confusion_matrix(preds, ground_truth)
     ConfusionMatrixDisplay(cm, display_labels=["Certainly Fake", "Probably Fake", "Probably Real", "Certainly Real"]).plot()
     plt.show()
+
+def load_model(model, path):
+    model.load_state_dict(torch.load(path))
+    return model
+
+
+
 
 if __name__ == '__main__':
     # make a random list of predictions and ground truth of length 1000
