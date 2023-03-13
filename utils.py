@@ -151,7 +151,7 @@ def cf1(percents, n_samples):
 def get_confusion_matrix(preds, ground_truth):
     return confusion_matrix(ground_truth, preds)
 
-def display_confusion_matrix(ground_truth, preds):
+def display_confusion_matrix(preds, ground_truth):
     cm = get_confusion_matrix(preds, ground_truth)
     ConfusionMatrixDisplay(cm, display_labels=["Certainly Fake", "Probably Fake", "Probably Real", "Certainly Real"]).plot()
     plt.show()

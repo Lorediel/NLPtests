@@ -33,7 +33,7 @@ class Model(nn.Module):
         self.dropout = nn.Dropout(0.1)
         self.softmax = nn.Softmax(dim=1)
 
-    def forward(self, input_ids, attention_mask, pixel_values, nums_images):
+    def forward(self, input_ids, attention_mask, pixel_values):
         
         t_embeddings = self.bert(input_ids = input_ids, attention_mask = attention_mask).pooler_output
 
