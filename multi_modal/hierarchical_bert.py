@@ -37,18 +37,19 @@ class Model(nn.Module):
         embeddings_text = self.bert(input_ids = input_ids, attention_mask = attention_mask).pooler_output
 
         fake_array, all_logits = self.segmentation_head(embeddings_text) # logits = [batch_size, 2]
-
+        
         final_probabilities = []
         for i in range(len(fake_array)):
             if fake_array[i] == "fake":
-                fake_prob = self.softmax(all_logits[i])
-                final_probabilities.append(torch.concat([torch.tensor([0,0]).to() +fake_prob], dim=0))
+                fake_prob = self.softmax(all_logits[i].unsqueeze(0))
+                final_probabilities.append(torch.concat([torch.tensor([0,0]).to("cuda"), fake_prob[0]], dim=0))
             else:
-                real_prob = self.softmax(all_logits[i])
-                final_probabilities.append(torch.concat([real_prob + torch.tensor([0,0])], dim=0))
+                real_prob = self.softmax(all_logits[i].unsqueeze(0))
+                final_probabilities.append(torch.concat([real_prob[0], torch.tensor([0,0]).to("cuda")], dim=0))
 
-        final_probabilities = torch.stack(final_probabilities, dim=0)
-
+        
+        final_probabilities = torch.stack(final_probabilities, dim=0).to(self.device)
+        
         
         return final_probabilities
     
@@ -173,7 +174,7 @@ class BertModel():
                 for k, v in t_inputs.items():
                     t_inputs[k] = v.to(device)
 
-                labels_tensor = post_process_labels(labels).to(device)
+                labels_tensor = post_process_labels(labels).float().to(device)
 
                 probs = self.model(
                     input_ids=t_inputs["input_ids"],
