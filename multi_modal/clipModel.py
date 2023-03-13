@@ -194,7 +194,7 @@ class ClipModel:
         if focal_loss:
             criterion = FocalLoss(gamma=2, reduction='sum')
         else:
-            criterion = nn.CrossEntropyLoss()
+            criterion = nn.CrossEntropyLoss(weight= torch.tensor([0.33, 0.24, 0.12, 0.31]).to(device))
         
         self.model.train()
         # Initialize the optimizer
