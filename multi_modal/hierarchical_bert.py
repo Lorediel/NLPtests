@@ -43,12 +43,14 @@ class Model(nn.Module):
         for i in range(len(fake_array)):
             if fake_array[i] == "fake":
                 fake_prob = self.softmax(all_logits[i])
-                final_probabilities += [[0,0] +fake_prob[0].tolist()]
+                final_probabilities.append(torch.concat([[0,0] +fake_prob], dim=0))
             else:
                 real_prob = self.softmax(all_logits[i])
-                final_probabilities += [real_prob[0].tolist() + [0,0]]
+                final_probabilities.append(torch.concat([real_prob + [0,0]], dim=0))
 
-        final_probabilities = torch.tensor(final_probabilities).to(self.device)
+        final_probabilities = torch.stack(final_probabilities, dim=0)
+
+        
         return final_probabilities
     
 class BertModel():
