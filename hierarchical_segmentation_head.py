@@ -11,8 +11,8 @@ class SegmentationHead(nn.Module):
             nn.LayerNorm(input_size),
             nn.Dropout(0.2),
             nn.ReLU(),
-            nn.Linear(input_size, 2),
-            nn.Dropout(0.1),
+            nn.Linear(input_size, 2)
+            
         )
 
         self.fakeClassificator = nn.Sequential(
@@ -20,8 +20,8 @@ class SegmentationHead(nn.Module):
             nn.LayerNorm(input_size),
             nn.Dropout(0.2),
             nn.ReLU(),
-            nn.Linear(input_size, 2),
-            nn.Dropout(0.1),
+            nn.Linear(input_size, 2)
+            
         )
 
         self.realClassificator = nn.Sequential(
@@ -29,8 +29,8 @@ class SegmentationHead(nn.Module):
             nn.LayerNorm(input_size),
             nn.Dropout(0.2),
             nn.ReLU(),
-            nn.Linear(input_size, 2),
-            nn.Dropout(0.1),
+            nn.Linear(input_size, 2)
+            
         )
 
     def forward(self, x):

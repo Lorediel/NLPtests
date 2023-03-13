@@ -42,10 +42,10 @@ class Model(nn.Module):
         for i in range(len(fake_array)):
             if fake_array[i] == "fake":
                 fake_prob = self.softmax(all_logits[i].unsqueeze(0))
-                final_probabilities.append(torch.concat([torch.tensor([0,0]).to("cuda"), fake_prob[0]], dim=0))
+                final_probabilities.append(torch.concat([fake_prob[0], torch.tensor([0,0]).to("cuda")], dim=0))
             else:
                 real_prob = self.softmax(all_logits[i].unsqueeze(0))
-                final_probabilities.append(torch.concat([real_prob[0], torch.tensor([0,0]).to("cuda")], dim=0))
+                final_probabilities.append(torch.concat([torch.tensor([0,0]).to("cuda"), real_prob[0]], dim=0))
 
         
         final_probabilities = torch.stack(final_probabilities, dim=0).to(self.device)
