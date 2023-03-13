@@ -50,4 +50,4 @@ class SegmentationHead(nn.Module):
                 fake_array.append("real")
                 real_logits =  self.realClassificator(x)
                 final_logits.append(real_logits)
-        return fake_array, torch.tensor(final_logits)
+        return fake_array, torch.stack(final_logits, dim=0)

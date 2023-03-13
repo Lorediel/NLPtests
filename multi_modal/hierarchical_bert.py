@@ -9,6 +9,19 @@ import os
 from NLPtests.focal_loss import FocalLoss
 from NLPtests.hierarchical_segmentation_head import SegmentationHead
 
+def post_process_labels(labels):
+    # 0: fake, 1: real, 2: cert_fake, 3: prob_fake, 4: prob_real, 5: cert_real
+    label_dict = {
+        0: [1,0,0,0],
+        1: [0,1,0,0],
+        2: [0,0,1,0],
+        3: [0,0,0,1],
+    }
+    new_labels = []
+    for label in labels:
+        new_labels.append(label_dict[label])
+    return torch.tensor(new_labels)
+
 class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
@@ -17,6 +30,7 @@ class Model(nn.Module):
         self.tokenizerLast = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased", padding_side = 'left', truncation_side = 'left')
         self.segmentation_head = SegmentationHead(768)
         self.softmax = nn.Softmax(dim=1)
+        self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
     def forward(self, input_ids, attention_mask):
         
@@ -158,7 +172,7 @@ class BertModel():
                 for k, v in t_inputs.items():
                     t_inputs[k] = v.to(device)
 
-                labels_tensor = torch.tensor(labels).to(device)
+                labels_tensor = post_process_labels(labels).to(device)
 
                 probs = self.model(
                     input_ids=t_inputs["input_ids"],
