@@ -40,6 +40,7 @@ class SegmentationHead(nn.Module):
         fake_array = []
         final_logits = []
         fake_indexes = []
+        real_indexes = []
         for f in fake_or_real: 
             if f == 0:
                 # fake
@@ -54,13 +55,11 @@ class SegmentationHead(nn.Module):
                 #real_logits =  self.realClassificator(x)
                 #final_logits.append(real_logits)
         # take only the x that are fake
-        fake_indexes = torch.tensor(fake_indexes).to(self.device)
-        fake_x = torch.masked_select(x, fake_indexes)
+        fake_x = x[fake_indexes,:]
         fake_logits = self.fakeClassificator(fake_x)
         
         # take only the x that are real
-        real_indexes = torch.tensor(real_indexes).to(self.device)
-        real_x = torch.masked_select(x, fake_indexes)
+        real_x = x[real_indexes,:]
         real_logits = self.realClassificator(real_x)
 
         for index in range(len(fake_or_real)):
