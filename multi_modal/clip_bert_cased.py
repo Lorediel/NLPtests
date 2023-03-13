@@ -39,18 +39,10 @@ class Model(nn.Module):
 
         i_embeddings = self.base_model.get_image_features(pixel_values = pixel_values)
 
-        #compute the max of the emnbeddings
-        embeddings_images = []
-        base = 0
-        for i in range(len(nums_images)):
-            tensor = i_embeddings[base:base+nums_images[i]]
-            max_tensor = torch.mean(tensor, dim=0, keepdim=True)
-            embeddings_images.append(max_tensor)
-            base += nums_images[i]
-        
-        embeddings_images = torch.cat(embeddings_images, dim=0)
+
+
         # Using tanh because the pooler output of bert is tanh
-        embeddings_images = self.tanh(embeddings_images)
+        embeddings_images = self.tanh(i_embeddings)
         embeddings = torch.cat((t_embeddings, embeddings_images), dim=1)
 
         #embeddings = self.layernorm1(embeddings)
@@ -144,22 +136,32 @@ class ClipBertModel:
                 labels = batch["label"]
                 nums_images = batch["nums_images"]
                 
+
+                random_images_list = []
+                base = 0
+                for i in range(len(nums_images)):
+                    if nums_images[i] == 1:
+                        random_images_list.append(images_list[base])
+                        base += nums_images[i]
+                        continue
+                    random_index = random.randint(0, nums_images[i]-1)
+                    sublist = images_list[base:base+nums_images[i]]
+                    random_images_list.append(sublist[random_index])
+                    base += nums_images[i]
                 
                 #t_inputs = self.model.processor(text=texts, return_tensors="pt", padding=True, truncation=True)
                 t_inputs = self.get_tokens(texts, tokenization_strategy)
-                i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
+                i_inputs = self.model.processor(images = random_images_list, return_tensors="pt", padding=True)
                 
                 for k, v in t_inputs.items():
                     t_inputs[k] = v.to(device)
                 for k, v in i_inputs.items():
                     i_inputs[k] = v.to(device)
                 
-                nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
                 logits, probs = self.model(
                     input_ids=t_inputs["input_ids"],
                     attention_mask=t_inputs["attention_mask"],
-                    pixel_values=i_inputs.pixel_values,
-                    nums_images = nums_images,
+                    pixel_values=i_inputs.pixel_values
                 )
 
                 preds = torch.argmax(logits, dim=1).detach().cpu().numpy()
@@ -206,8 +208,20 @@ class ClipBertModel:
                 labels = batch["label"]
                 nums_images = batch["nums_images"]
 
+                random_images_list = []
+                base = 0
+                for i in range(len(nums_images)):
+                    if nums_images[i] == 1:
+                        random_images_list.append(images_list[base])
+                        base += nums_images[i]
+                        continue
+                    random_index = random.randint(0, nums_images[i]-1)
+                    sublist = images_list[base:base+nums_images[i]]
+                    random_images_list.append(sublist[random_index])
+                    base += nums_images[i]
+
                 t_inputs = self.get_tokens(texts, tokenization_strategy)
-                i_inputs = self.model.processor(images = images_list, return_tensors="pt", padding=True)
+                i_inputs = self.model.processor(images = random_images_list, return_tensors="pt", padding=True)
                 
                 for k, v in t_inputs.items():
                     t_inputs[k] = v.to(device)
@@ -215,12 +229,10 @@ class ClipBertModel:
                     i_inputs[k] = v.to(device)
                 labels = torch.tensor(labels).to(device)
 
-                nums_images = torch.tensor(nums_images).to(dtype=torch.long, device=device)
                 outputs = self.model(
                     input_ids=t_inputs["input_ids"],
                     attention_mask=t_inputs["attention_mask"],
-                    pixel_values=i_inputs.pixel_values,
-                    nums_images = nums_images,
+                    pixel_values=i_inputs.pixel_values
                 )
                 
                 logits = outputs[0]
