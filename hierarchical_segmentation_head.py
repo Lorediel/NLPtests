@@ -39,15 +39,34 @@ class SegmentationHead(nn.Module):
         fake_or_real = torch.argmax(fake_or_real_logits, dim=1)
         fake_array = []
         final_logits = []
+        fake_indexes = []
         for f in fake_or_real: 
             if f == 0:
                 # fake
                 fake_array.append("fake")
-                fake_logits = self.fakeClassificator(x)
-                final_logits.append(fake_logits)
+                fake_indexes.append(1)
+                real_indexes.append(0)
             else:
                 # real
                 fake_array.append("real")
-                real_logits =  self.realClassificator(x)
-                final_logits.append(real_logits)
+                fake_indexes.append(0)
+                real_indexes.append(1)
+                #real_logits =  self.realClassificator(x)
+                #final_logits.append(real_logits)
+        # take only the x that are fake
+        fake_indexes = torch.tensor(fake_indexes).to(self.device)
+        fake_x = torch.masked_select(x, fake_indexes)
+        fake_logits = self.fakeClassificator(fake_x)
+        
+        # take only the x that are real
+        real_indexes = torch.tensor(real_indexes).to(self.device)
+        real_x = torch.masked_select(x, fake_indexes)
+        real_logits = self.realClassificator(real_x)
+
+        for index in range(len(fake_or_real)):
+            if fake_or_real[index] == 0:
+                final_logits.append(fake_logits[index])
+            else:
+                final_logits.append(real_logits[index])
+        
         return fake_array, torch.stack(final_logits, dim=0)
